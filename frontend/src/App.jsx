@@ -6,6 +6,7 @@ import Folders from './components/pages/Folders.jsx';
 import Documents from './components/pages/Documents.jsx';
 import Users from './components/pages/Users.jsx';
 import Spaces from './components/pages/Spaces.jsx';
+import Notifications from './components/pages/Notifications.jsx';
 function App() {
   return (
     <Routes>
@@ -18,6 +19,8 @@ function App() {
       <Route path="/documents" element={<Documents />} />
       <Route path="/users" element={<Users/>} />
       <Route path="/spaces" element={<Spaces/>} />
+      <Route path="/Notifications" element={<Notifications/>} />
+
 
       <Route
         path="*"
