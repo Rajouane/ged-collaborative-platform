@@ -1,80 +1,294 @@
+/* =========================================
+   DOCUMENTS LAYOUT
+========================================= */
 
-.documents-main {
-    flex: 1;
-    min-width: 0;
+.documents-layout {
+    display: flex;
+
+    width: 100%;
     min-height: 100vh;
+
+    margin: 0;
+    padding: 0;
+
+    background: #f4f6f9;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   SIDEBAR DANS DOCUMENTS
+========================================= */
+
+.documents-layout .sidebar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 280px;
+    height: 100vh;
+
+    flex: 0 0 280px;
+
+    z-index: 1000;
+}
+
+
+/* =========================================
+   MAIN DOCUMENTS
+========================================= */
+
+.documents-layout .documents-main {
+
+    width: calc(100% - 280px);
+
+    min-width: 0;
+
+    min-height: 100vh;
+
+    margin-left: 280px;
+
+    padding: 0;
+
+    box-sizing: border-box;
 
     background: #f4f6f9;
 }
 
+
+/* =========================================
+   HEADER
+========================================= */
+
 .documents-header {
-    height: 80px;
 
-    padding: 0 35px;
+    min-height: 80px;
 
-    background: white;
+    padding: 20px 35px;
+
+    background: #ffffff;
 
     border-bottom: 1px solid #e5e7eb;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
+    gap: 25px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   HEADER INFO
+========================================= */
+
+.documents-header-info {
+    min-width: 0;
 }
 
 .documents-header h1 {
+
     margin: 0;
 
-    font-size: 24px;
-
     color: #111827;
+
+    font-size: 25px;
+
+    font-weight: 700;
 }
 
 .documents-header p {
-    margin: 5px 0 0;
 
-    font-size: 13px;
+    margin: 6px 0 0;
 
     color: #6b7280;
+
+    font-size: 14px;
 }
 
-.add-document-button {
-    padding: 11px 18px;
+
+/* =========================================
+   TOOLS
+========================================= */
+
+.documents-tools {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+}
+
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.document-search {
+
+    width: 270px;
+
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 0 13px;
+
+    background: #ffffff;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    box-sizing: border-box;
+}
+
+.document-search span {
+    font-size: 16px;
+}
+
+.document-search input {
+
+    width: 100%;
 
     border: none;
 
-    border-radius: 8px;
+    outline: none;
 
-    background: #1e3a8a;
+    font-size: 13px;
 
-    color: white;
+    background: transparent;
+}
+
+
+/* =========================================
+   FILTER
+========================================= */
+
+.document-filter {
+
+    height: 42px;
+
+    padding: 0 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    background: white;
+
+    color: #374151;
+
+    outline: none;
 
     cursor: pointer;
 }
 
-.add-document-button:hover {
-    background: #172f6d;
+
+/* =========================================
+   ADD BUTTON
+========================================= */
+
+.add-document-button {
+
+    height: 42px;
+
+    padding: 0 18px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
 }
+
+.add-document-button:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================================
+   CONTENT
+========================================= */
 
 .documents-content {
-    padding: 35px;
+
+    padding: 30px 35px;
+
+    box-sizing: border-box;
 }
 
-.documents-message {
-    color: #6b7280;
-}
+
+/* =========================================
+   ERROR
+========================================= */
 
 .documents-error {
-    padding: 15px;
 
-    border-radius: 8px;
+    margin-bottom: 20px;
+
+    padding: 14px 16px;
+
+    border-radius: 9px;
 
     background: #fee2e2;
 
     color: #991b1b;
+
+    border: 1px solid #fecaca;
 }
 
-.empty-documents {
-    padding: 60px 20px;
+
+/* =========================================
+   STATS
+========================================= */
+
+.documents-stats {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 25px;
+}
+
+.document-stat-card {
+
+    min-height: 100px;
+
+    padding: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
 
     background: white;
 
@@ -82,27 +296,59 @@
 
     border-radius: 12px;
 
-    text-align: center;
+    box-sizing: border-box;
 }
 
-.empty-document-icon {
-    font-size: 50px;
+.document-stat-icon {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eff6ff;
+
+    font-size: 23px;
 }
 
-.empty-documents h2 {
-    margin: 15px 0 8px;
+.document-stat-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
 }
 
-.empty-documents p {
-    margin: 0;
+.document-stat-info span {
 
     color: #6b7280;
+
+    font-size: 12px;
+}
+
+.document-stat-info strong {
+
+    color: #111827;
+
+    font-size: 23px;
 }
 
 
-/* TABLE */
+/* =========================================
+   TABLE
+========================================= */
 
 .documents-table-wrapper {
+
+    width: 100%;
+
     overflow-x: auto;
 
     background: white;
@@ -113,26 +359,33 @@
 }
 
 .documents-table {
+
     width: 100%;
+
+    min-width: 800px;
 
     border-collapse: collapse;
 }
 
 .documents-table th {
-    padding: 16px;
 
-    background: #f9fafb;
+    padding: 15px 16px;
+
+    background: #f8fafc;
 
     border-bottom: 1px solid #e5e7eb;
 
     color: #374151;
 
-    font-size: 13px;
+    font-size: 12px;
+
+    font-weight: 700;
 
     text-align: left;
 }
 
 .documents-table td {
+
     padding: 16px;
 
     border-bottom: 1px solid #f1f5f9;
@@ -146,12 +399,20 @@
     border-bottom: none;
 }
 
+
+/* =========================================
+   DOCUMENT NAME
+========================================= */
+
 .document-name {
+
     display: flex;
 
     align-items: center;
 
     gap: 10px;
+
+    min-width: 180px;
 }
 
 .document-name span {
@@ -162,54 +423,143 @@
     color: #1e3a8a;
 }
 
-.document-action-button {
-    padding: 7px 12px;
 
-    border: none;
+/* =========================================
+   TYPE
+========================================= */
+
+.document-type {
+
+    display: inline-block;
+
+    padding: 5px 9px;
 
     border-radius: 6px;
 
-    background: #e0e7ff;
+    background: #eff6ff;
 
-    color: #1e3a8a;
+    color: #1d4ed8;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.document-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+}
+
+.document-action-button,
+.document-delete-button {
+
+    padding: 7px 11px;
+
+    border: none;
+
+    border-radius: 7px;
 
     cursor: pointer;
+
+    font-size: 12px;
+}
+
+.document-action-button {
+
+    background: #dbeafe;
+
+    color: #1d4ed8;
 }
 
 .document-action-button:hover {
-    background: #c7d2fe;
+    background: #bfdbfe;
+}
+
+.document-delete-button {
+
+    background: #fee2e2;
+
+    color: #b91c1c;
+}
+
+.document-delete-button:hover {
+    background: #fecaca;
 }
 
 
-@media (max-width: 700px) {
+/* =========================================
+   EMPTY
+========================================= */
 
-    .documents-header {
-        height: auto;
+.empty-documents {
 
-        padding: 20px;
+    padding: 70px 20px;
 
-        flex-direction: column;
+    background: white;
 
-        align-items: flex-start;
+    border: 1px solid #e5e7eb;
 
-        gap: 15px;
-    }
+    border-radius: 12px;
 
-    .documents-content {
-        padding: 20px;
-    }
+    text-align: center;
+}
+
+.empty-document-icon {
+
+    font-size: 50px;
+
+    margin-bottom: 10px;
+}
+
+.empty-documents h2 {
+
+    margin: 10px 0;
+
+    color: #111827;
+}
+
+.empty-documents p {
+
+    margin: 0;
+
+    color: #6b7280;
 }
 
 
+/* =========================================
+   LOADING
+========================================= */
+
+.documents-message {
+
+    padding: 40px;
+
+    text-align: center;
+
+    color: #6b7280;
+}
 
 
+/* =========================================
+   MODAL
+========================================= */
 
 .modal-overlay {
+
     position: fixed;
 
     inset: 0;
 
-    background: rgba(0, 0, 0, 0.45);
+    z-index: 2000;
 
     display: flex;
 
@@ -219,10 +569,13 @@
 
     padding: 20px;
 
-    z-index: 1000;
+    background: rgba(15, 23, 42, 0.55);
+
+    box-sizing: border-box;
 }
 
 .document-modal {
+
     width: 100%;
 
     max-width: 550px;
@@ -231,19 +584,27 @@
 
     overflow-y: auto;
 
-    background: white;
-
-    border-radius: 12px;
-
     padding: 25px;
 
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    background: white;
+
+    border-radius: 14px;
+
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+
+    box-sizing: border-box;
 }
 
+
+/* =========================================
+   MODAL HEADER
+========================================= */
+
 .modal-header {
+
     display: flex;
 
-    align-items: center;
+    align-items: flex-start;
 
     justify-content: space-between;
 
@@ -251,94 +612,116 @@
 }
 
 .modal-header h2 {
+
     margin: 0;
 
     color: #111827;
 }
 
-.modal-close {
-    width: 32px;
+.modal-subtitle {
 
-    height: 32px;
+    margin: 6px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+.modal-close {
+
+    width: 34px;
+    height: 34px;
 
     border: none;
 
-    border-radius: 50%;
+    border-radius: 8px;
 
     background: #f3f4f6;
+
+    color: #374151;
 
     font-size: 22px;
 
     cursor: pointer;
 }
 
-.modal-close:hover {
-    background: #e5e7eb;
-}
+
+/* =========================================
+   FORM
+========================================= */
 
 .document-modal .form-group {
+
     margin-bottom: 18px;
 }
 
 .document-modal .form-group label {
+
     display: block;
 
     margin-bottom: 7px;
 
+    color: #374151;
+
     font-size: 13px;
 
     font-weight: 600;
-
-    color: #374151;
 }
 
 .document-modal input[type="text"],
 .document-modal textarea,
 .document-modal select {
-    width: 100%;
 
-    box-sizing: border-box;
+    width: 100%;
 
     padding: 11px 12px;
 
     border: 1px solid #d1d5db;
 
-    border-radius: 7px;
+    border-radius: 8px;
+
+    outline: none;
+
+    box-sizing: border-box;
 
     font-family: inherit;
 
     font-size: 14px;
-
-    outline: none;
 }
 
 .document-modal textarea {
+
+    min-height: 100px;
+
     resize: vertical;
 }
 
-.document-modal input[type="text"]:focus,
+.document-modal input:focus,
 .document-modal textarea:focus,
 .document-modal select:focus {
-    border-color: #1e3a8a;
+
+    border-color: #2563eb;
+
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
 
 .document-modal input[type="file"] {
-    width: 100%;
 
-    box-sizing: border-box;
+    width: 100%;
 
     padding: 10px;
 
     border: 1px dashed #9ca3af;
 
-    border-radius: 7px;
+    border-radius: 8px;
 
     background: #f9fafb;
 
-    cursor: pointer;
+    box-sizing: border-box;
 }
 
 .document-modal small {
+
     display: block;
 
     margin-top: 6px;
@@ -348,7 +731,13 @@
     font-size: 11px;
 }
 
+
+/* =========================================
+   MODAL BUTTONS
+========================================= */
+
 .modal-actions {
+
     display: flex;
 
     justify-content: flex-end;
@@ -360,34 +749,82 @@
 
 .cancel-button,
 .create-button {
-    padding: 10px 16px;
+
+    padding: 10px 17px;
 
     border: none;
 
-    border-radius: 7px;
+    border-radius: 8px;
 
     cursor: pointer;
+
+    font-weight: 600;
 }
 
 .cancel-button {
+
     background: #f3f4f6;
 
     color: #374151;
 }
 
 .create-button {
-    background: #1e3a8a;
+
+    background: #2563eb;
 
     color: white;
 }
 
 .create-button:hover {
-    background: #172f6d;
+    background: #1d4ed8;
 }
 
-.create-button:disabled {
-    opacity: 0.6;
 
-    cursor: not-allowed;
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .documents-header {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .documents-tools {
+        width: 100%;
+    }
+
+    .document-search {
+        flex: 1;
+    }
+
 }
 
+
+@media (max-width: 800px) {
+
+    .documents-layout .documents-main {
+
+        width: calc(100% - 220px);
+
+        margin-left: 220px;
+    }
+
+    .documents-layout .sidebar {
+
+        width: 220px;
+    }
+
+    .documents-content {
+
+        padding: 20px;
+    }
+
+    .documents-stats {
+
+        grid-template-columns: 1fr;
+    }
+}

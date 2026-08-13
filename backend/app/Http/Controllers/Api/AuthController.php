@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    /**
+     * Connexion
+     */
     public function login(Request $request)
     {
         $request->validate([
@@ -23,11 +26,29 @@ class AuthController extends Controller
                 'message' => 'Email ou mot de passe incorrect'
             ], 401);
         }
+
         $token = $user->createToken('api-token')->plainTextToken;
-                return response()->json([
+
+        return response()->json([
             'message' => 'Login successful',
-            'user' => $user,
+            'user' => $user->load('role'),
             'token' => $token,
-                ]);
+        ]);
+    }
+
+    /**
+     * Déconnexion
+     */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user) {
+            $user->currentAccessToken()?->delete();
+        }
+
+        return response()->json([
+            'message' => 'Déconnexion réussie.'
+        ]);
     }
 }

@@ -1,33 +1,140 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Login from './components/pages/Login.jsx';
-import Dashboard from './components/pages/Dashboard.jsx';
-import Folders from './components/pages/Folders.jsx';
-import Documents from './components/pages/Documents.jsx';
-import Users from './components/pages/Users.jsx';
-import Spaces from './components/pages/Spaces.jsx';
-import Notifications from './components/pages/Notifications.jsx';
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+import Sidebar from "./components/pages/Sidebar.jsx";
 
-      <Route path="/login" element={<Login />} />
+import Login from "./components/pages/Login.jsx";
+import Dashboard from "./components/pages/Dashboard.jsx";
+import Documents from "./components/pages/Documents.jsx";
+import Folders from "./components/pages/Folders.jsx";
+import Spaces from "./components/pages/Spaces.jsx";
+import Users from "./components/pages/Users.jsx";
+import Announcements from "./components/pages/Announcements.jsx";
+import Notifications from "./components/pages/Notifications.jsx";
 
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/folders" element={<Folders />} />
-      <Route path="/documents" element={<Documents />} />
-      <Route path="/users" element={<Users/>} />
-      <Route path="/spaces" element={<Spaces/>} />
-      <Route path="/Notifications" element={<Notifications/>} />
+import "./App.css";
 
+export default function App() {
+    return (
+        <Routes>
 
-      <Route
-        path="*"
-        element={<Navigate to="/login" replace />}
-      />
-    </Routes>
-  );
+            {/* LOGIN : PAS DE SIDEBAR */}
+            <Route
+                path="/login"
+                element={<Login />}
+            />
+
+            {/* DASHBOARD */}
+            <Route
+                path="/dashboard"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Dashboard />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* DOCUMENTS */}
+            <Route
+                path="/documents"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Documents />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* FOLDERS */}
+            <Route
+                path="/folders"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Folders />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* SPACES */}
+            <Route
+                path="/spaces"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Spaces />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* USERS */}
+            <Route
+                path="/users"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Users />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* ANNOUNCEMENTS */}
+            <Route
+                path="/announcements"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Announcements />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* NOTIFICATIONS */}
+            <Route
+                path="/notifications"
+                element={
+                    <>
+                        <Sidebar />
+                        <div className="app-page">
+                            <Notifications />
+                        </div>
+                    </>
+                }
+            />
+
+            {/* DEFAULT */}
+            <Route
+                path="/"
+                element={
+                    <Navigate
+                        to="/dashboard"
+                        replace
+                    />
+                }
+            />
+
+            <Route
+                path="*"
+                element={
+                    <Navigate
+                        to="/dashboard"
+                        replace
+                    />
+                }
+            />
+
+        </Routes>
+    );
 }
-
-export default App;

@@ -1,18 +1,20 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
+import "./Login.css";
 
-function Login() {
+export default function Login() {
+    const navigate = useNavigate();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const navigate = useNavigate();
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const handleLogin = async (e) => {
+        e.preventDefault();
 
         setError("");
         setLoading(true);
@@ -23,34 +25,39 @@ function Login() {
                 password: password,
             });
 
-            console.log("Réponse Laravel :", response.data);
-
-            // Récupération du token
             const token = response.data.token;
-
-            // Récupération de l'utilisateur
             const user = response.data.user;
 
-            // Sauvegarde dans le navigateur
+            if (!token) {
+                setError("Token non reçu.");
+                return;
+            }
+
+            if (!user) {
+                setError("Utilisateur non reçu.");
+                return;
+            }
+
             localStorage.setItem("token", token);
             localStorage.setItem("user", JSON.stringify(user));
 
-            // Redirection vers Dashboard
             navigate("/dashboard");
 
         } catch (error) {
             console.error("Erreur login :", error);
 
             if (error.response) {
-                setError(
-                    error.response.data.message ||
-                    "Email ou mot de passe incorrect"
-                );
+                if (error.response.data?.message) {
+                    setError(error.response.data.message);
+                } else if (error.response.status === 401) {
+                    setError("Email ou mot de passe incorrect.");
+                } else {
+                    setError("Erreur lors de la connexion.");
+                }
             } else {
-                setError(
-                    "Impossible de contacter le serveur Laravel."
-                );
+                setError("Impossible de contacter le serveur Laravel.");
             }
+
         } finally {
             setLoading(false);
         }
@@ -58,93 +65,114 @@ function Login() {
 
     return (
         <div className="login-page">
-            <div className="login-wrapper">
 
-                <div className="login-brand">
-                    <div className="brand-logo">
-                        GED
-                    </div>
+            {/* =================================
+                DECORATIVE BACKGROUND BLOBS
+            ================================= */}
 
-                    <h1>GED Platform</h1>
+            <div className="bg-blob blob-violet"></div>
+            <div className="bg-blob blob-cyan"></div>
+            <div className="bg-blob blob-pink"></div>
 
-                    <p>
-                        Gestion Électronique des Documents
-                    </p>
+
+            {/* =================================
+                GLASS LOGIN CARD
+            ================================= */}
+
+            <div className="login-card">
+
+                <div className="login-logo">
+                    <img src="/2M.jpg" alt="2M" />
                 </div>
 
-                <div className="login-card">
+                <div className="login-header">
+                    <h1>Bienvenue</h1>
+                    <p>Connectez-vous à votre espace GED</p>
+                </div>
 
-                    <div className="login-header">
-                        <h2>Bienvenue</h2>
-
-                        <p>
-                            Connectez-vous à votre compte
-                        </p>
+                {error && (
+                    <div className="login-error">
+                        <span className="error-icon">!</span>
+                        <span>{error}</span>
                     </div>
+                )}
 
-                    {error && (
-                        <div className="login-error">
-                            {error}
-                        </div>
-                    )}
+                <form className="login-form" onSubmit={handleLogin}>
 
-                    <form onSubmit={handleSubmit}>
-
-                        <div className="form-group">
-                            <label htmlFor="email">
-                                Adresse email
-                            </label>
-
+                    <div className="login-field">
+                        <label htmlFor="email">Adresse email</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">✉</span>
                             <input
                                 id="email"
                                 type="email"
                                 value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
-                                placeholder="admin@ged.com"
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="exemple@email.com"
+                                autoComplete="email"
                                 required
                             />
                         </div>
+                    </div>
 
-                        <div className="form-group">
-                            <label htmlFor="password">
-                                Mot de passe
-                            </label>
-
+                    <div className="login-field">
+                        <label htmlFor="password">Mot de passe</label>
+                        <div className="input-wrapper">
+                            <span className="input-icon">🔒</span>
                             <input
                                 id="password"
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 value={password}
-                                onChange={(event) =>
-                                    setPassword(event.target.value)
-                                }
-                                placeholder="••••••••"
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Votre mot de passe"
+                                autoComplete="current-password"
                                 required
                             />
+                            <button
+                                type="button"
+                                className="password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                            >
+                                {showPassword ? "🙈" : "👁"}
+                            </button>
                         </div>
+                    </div>
 
-                        <button
-                            type="submit"
-                            className="login-button"
-                            disabled={loading}
-                        >
-                            {loading
-                                ? "Connexion..."
-                                : "Se connecter"}
-                        </button>
+                    <div className="login-options">
+                        <label className="remember-me">
+                            <input type="checkbox" />
+                            <span>Se souvenir de moi</span>
+                        </label>
 
-                    </form>
+                        <Link to="/forgot-password" className="forgot-password">
+                            Mot de passe oublié ?
+                        </Link>
+                    </div>
+
+                    <button type="submit" className="login-button" disabled={loading}>
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Connexion...
+                            </>
+                        ) : (
+                            <>
+                                Se connecter
+                                <span className="button-arrow">→</span>
+                            </>
+                        )}
+                    </button>
+
+                </form>
+
+                <div className="login-footer">
+                    <p>Plateforme de Gestion Électronique des Documents</p>
+                    <span>© 2026 2M Collaborative Platform</span>
                 </div>
 
-                <p className="login-footer">
-                    © 2026 GED Platform — Tous droits réservés
-                </p>
-
             </div>
+
         </div>
     );
 }
-
-export default Login;
-

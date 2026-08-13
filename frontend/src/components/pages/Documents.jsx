@@ -1,716 +1,658 @@
-
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import Sidebar from "./Sidebar";
 import "./Documents.css";
-
-function Documents() {
-    const navigate = useNavigate();
-
+import Sidebar from "./Sidebar.jsx";
+export default function Documents() {
     const [documents, setDocuments] = useState([]);
     const [folders, setFolders] = useState([]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const [showModal, setShowModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [typeFilter, setTypeFilter] = useState("all");
 
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [folderId, setFolderId] = useState("");
-    const [file, setFile] = useState(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [creating, setCreating] = useState(false);
 
-    const [uploading, setUploading] = useState(false);
-
-
-    // ==========================================
-    // CHARGEMENT INITIAL
-    // ==========================================
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        folder_id: "",
+        file: null,
+    });
 
     useEffect(() => {
         loadDocuments();
         loadFolders();
     }, []);
 
-
-    // ==========================================
-    // RÉCUPÉRER LES DOCUMENTS
-    // ==========================================
-
     const loadDocuments = async () => {
         try {
-            const token = localStorage.getItem("token");
+            setLoading(true);
+            setError("");
 
-            if (!token) {
-                navigate("/login");
-                return;
+            const response = await api.get("/documents");
+
+            const data = response.data;
+
+            if (Array.isArray(data)) {
+                setDocuments(data);
+            } else if (Array.isArray(data?.data)) {
+                setDocuments(data.data);
+            } else {
+                setDocuments([]);
             }
-
-            const response = await api.get("/documents", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            console.log(
-                "Documents Laravel :",
-                response.data
-            );
-
-            setDocuments(response.data);
-
-        } catch (error) {
-            console.error(
-                "Erreur documents :",
-                error
-            );
-
-            if (error.response?.status === 401) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-
-                navigate("/login");
-                return;
-            }
+        } catch (err) {
+            console.error("Erreur documents :", err);
 
             setError(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Impossible de récupérer les documents."
             );
-
         } finally {
             setLoading(false);
         }
     };
 
-
-    // ==========================================
-    // RÉCUPÉRER LES DOSSIERS
-    // ==========================================
-
     const loadFolders = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const response = await api.get("/folders");
 
-            if (!token) {
-                return;
+            const data = response.data;
+
+            if (Array.isArray(data)) {
+                setFolders(data);
+            } else if (Array.isArray(data?.data)) {
+                setFolders(data.data);
+            } else {
+                setFolders([]);
+            }
+        } catch (err) {
+            console.error("Erreur dossiers :", err);
+        }
+    };
+
+    const openCreateModal = () => {
+        setFormData({
+            title: "",
+            description: "",
+            folder_id: "",
+            file: null,
+        });
+
+        setError("");
+        setShowCreateModal(true);
+    };
+
+    const closeCreateModal = () => {
+        if (creating) return;
+
+        setShowCreateModal(false);
+
+        setFormData({
+            title: "",
+            description: "",
+            folder_id: "",
+            file: null,
+        });
+    };
+
+    const handleChange = (e) => {
+        const { name, value, files } = e.target;
+
+        setFormData((previous) => ({
+            ...previous,
+            [name]: name === "file"
+                ? files?.[0] || null
+                : value,
+        }));
+    };
+
+    const handleCreateDocument = async (e) => {
+        e.preventDefault();
+
+        setError("");
+
+        if (!formData.title.trim()) {
+            setError("Le titre du document est obligatoire.");
+            return;
+        }
+
+        if (!formData.file) {
+            setError("Veuillez sélectionner un fichier.");
+            return;
+        }
+
+        try {
+            setCreating(true);
+
+            const data = new FormData();
+
+            data.append("title", formData.title);
+            data.append("description", formData.description);
+
+            if (formData.folder_id) {
+                data.append("folder_id", formData.folder_id);
             }
 
-            const response = await api.get("/folders", {
+            data.append("file", formData.file);
+
+            await api.post("/documents", data, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
                 },
             });
 
-            console.log(
-                "Dossiers Laravel :",
-                response.data
-            );
+            closeCreateModal();
 
-            setFolders(response.data);
+            await loadDocuments();
+        } catch (err) {
+            console.error("Erreur création document :", err);
 
-        } catch (error) {
-            console.error(
-                "Erreur dossiers :",
-                error
-            );
+            if (err.response?.data?.errors) {
+                const errors = err.response.data.errors;
+
+                const firstError =
+                    Object.values(errors)[0]?.[0];
+
+                setError(
+                    firstError ||
+                    "Erreur de validation."
+                );
+            } else {
+                setError(
+                    err.response?.data?.message ||
+                    "Impossible de créer le document."
+                );
+            }
+        } finally {
+            setCreating(false);
         }
     };
 
-
-    // ==========================================
-    // OUVRIR MODAL
-    // ==========================================
-
-    const openCreateModal = () => {
-        setTitle("");
-        setDescription("");
-        setFolderId("");
-        setFile(null);
-        setError("");
-
-        setShowModal(true);
-    };
-
-
-    // ==========================================
-    // FERMER MODAL
-    // ==========================================
-
-    const closeModal = () => {
-        if (uploading) {
-            return;
-        }
-
-        setShowModal(false);
-
-        setTitle("");
-        setDescription("");
-        setFolderId("");
-        setFile(null);
-        setError("");
-    };
-
-
-    // ==========================================
-    // SÉLECTION DU FICHIER
-    // ==========================================
-
-    const handleFileChange = (event) => {
-        const selectedFile =
-            event.target.files[0];
-
-        console.log(
-            "Fichier sélectionné :",
-            selectedFile
+    const handleDelete = async (id) => {
+        const confirmed = window.confirm(
+            "Voulez-vous vraiment supprimer ce document ?"
         );
 
-        if (!selectedFile) {
-            setFile(null);
-            return;
-        }
-
-        // Maximum Laravel : 10 MB
-        const maxSize =
-            10 * 1024 * 1024;
-
-        if (selectedFile.size > maxSize) {
-            setFile(null);
-
-            setError(
-                "Le fichier ne doit pas dépasser 10 MB."
-            );
-
-            event.target.value = "";
-
-            return;
-        }
-
-        setError("");
-        setFile(selectedFile);
-    };
-
-
-    // ==========================================
-    // ENVOYER LE DOCUMENT
-    // ==========================================
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-
-        setError("");
-
-
-        // Vérifier le titre
-
-        if (!title.trim()) {
-            setError(
-                "Le titre est obligatoire."
-            );
-
-            return;
-        }
-
-
-        // Vérifier le fichier
-
-        if (!file) {
-            setError(
-                "Veuillez sélectionner un fichier."
-            );
-
-            return;
-        }
-
+        if (!confirmed) return;
 
         try {
-            setUploading(true);
+            setError("");
 
-            const token =
-                localStorage.getItem("token");
+            await api.delete(`/documents/${id}`);
 
-
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-
-
-            // ==================================
-            // FORMDATA
-            // ==================================
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "title",
-                title
+            setDocuments((previous) =>
+                previous.filter(
+                    (document) => document.id !== id
+                )
             );
-
-
-            formData.append(
-                "description",
-                description
-            );
-
-
-            formData.append(
-                "file",
-                file
-            );
-
-
-            if (folderId) {
-                formData.append(
-                    "folder_id",
-                    folderId
-                );
-            }
-
-
-            // ==================================
-            // DEBUG
-            // ==================================
-
-            console.log(
-                "===== FORM DATA ====="
-            );
-
-
-            for (
-                const [key, value]
-                of formData.entries()
-            ) {
-                console.log(
-                    key,
-                    value
-                );
-            }
-
-
-            console.log(
-                "====================="
-            );
-
-
-            // ==================================
-            // POST LARAVEL
-            // ==================================
-
-            const response =
-                await api.post(
-                    "/documents",
-                    formData,
-                    {
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`,
-                        },
-                    }
-                );
-
-
-            console.log(
-                "Document créé :",
-                response.data
-            );
-
-
-            // ==================================
-            // AJOUTER À LA LISTE
-            // ==================================
-
-            setDocuments(
-                (currentDocuments) => [
-                    ...currentDocuments,
-                    response.data,
-                ]
-            );
-
-
-            // ==================================
-            // RESET
-            // ==================================
-
-            setTitle("");
-            setDescription("");
-            setFolderId("");
-            setFile(null);
-
-            setShowModal(false);
-
-
-        } catch (error) {
-
-            console.error(
-                "Erreur upload :",
-                error
-            );
-
-
-            console.error(
-                "Réponse Laravel :",
-                error.response?.data
-            );
-
-
-            // Session expirée
-
-            if (
-                error.response?.status === 401
-            ) {
-                localStorage.removeItem(
-                    "token"
-                );
-
-                localStorage.removeItem(
-                    "user"
-                );
-
-                navigate("/login");
-
-                return;
-            }
-
-
-            // Erreurs validation Laravel
-
-            if (
-                error.response?.data?.errors
-            ) {
-
-                const errors =
-                    error.response.data.errors;
-
-
-                const messages =
-                    Object.values(errors)
-                        .flat()
-                        .join(" ");
-
-
-                setError(
-                    messages
-                );
-
-            } else {
-
-                setError(
-                    error.response?.data?.message ||
-                    "Erreur lors de l'envoi du document."
-                );
-            }
-
-        } finally {
-            setUploading(false);
-        }
-    };
-
-
-    // ==========================================
-    // SUPPRIMER DOCUMENT
-    // ==========================================
-
-    const handleDelete = async (
-        documentId
-    ) => {
-
-        const confirmation =
-            window.confirm(
-                "Voulez-vous vraiment supprimer ce document ?"
-            );
-
-
-        if (!confirmation) {
-            return;
-        }
-
-
-        try {
-
-            const token =
-                localStorage.getItem("token");
-
-
-            await api.delete(
-                `/documents/${documentId}`,
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`,
-                    },
-                }
-            );
-
-
-            setDocuments(
-                (currentDocuments) =>
-                    currentDocuments.filter(
-                        (document) =>
-                            document.id !==
-                            documentId
-                    )
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "Erreur suppression :",
-                error
-            );
-
+        } catch (err) {
+            console.error("Erreur suppression :", err);
 
             setError(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Impossible de supprimer le document."
             );
         }
     };
 
+    const getFileIcon = (document) => {
+        const type = (
+            document.file_type ||
+            document.mime_type ||
+            ""
+        ).toLowerCase();
 
-    // ==========================================
-    // AFFICHAGE
-    // ==========================================
+        const name = (
+            document.file_name ||
+            document.filename ||
+            ""
+        ).toLowerCase();
+
+        if (
+            type.includes("pdf") ||
+            name.endsWith(".pdf")
+        ) {
+            return "📕";
+        }
+
+        if (
+            type.includes("word") ||
+            type.includes("document") ||
+            name.endsWith(".doc") ||
+            name.endsWith(".docx")
+        ) {
+            return "📘";
+        }
+
+        if (
+            type.includes("excel") ||
+            type.includes("sheet") ||
+            name.endsWith(".xls") ||
+            name.endsWith(".xlsx")
+        ) {
+            return "📗";
+        }
+
+        if (
+            type.includes("image") ||
+            name.endsWith(".jpg") ||
+            name.endsWith(".jpeg") ||
+            name.endsWith(".png") ||
+            name.endsWith(".webp")
+        ) {
+            return "🖼️";
+        }
+
+        if (
+            type.includes("zip") ||
+            name.endsWith(".zip") ||
+            name.endsWith(".rar")
+        ) {
+            return "🗜️";
+        }
+
+        return "📄";
+    };
+
+    const getFileType = (document) => {
+        const type = (
+            document.file_type ||
+            document.mime_type ||
+            ""
+        ).toLowerCase();
+
+        const name = (
+            document.file_name ||
+            document.filename ||
+            ""
+        ).toLowerCase();
+
+        if (
+            type.includes("pdf") ||
+            name.endsWith(".pdf")
+        ) {
+            return "PDF";
+        }
+
+        if (
+            type.includes("word") ||
+            type.includes("document") ||
+            name.endsWith(".doc") ||
+            name.endsWith(".docx")
+        ) {
+            return "WORD";
+        }
+
+        if (
+            type.includes("excel") ||
+            type.includes("sheet") ||
+            name.endsWith(".xls") ||
+            name.endsWith(".xlsx")
+        ) {
+            return "EXCEL";
+        }
+
+        if (
+            type.includes("image") ||
+            name.endsWith(".jpg") ||
+            name.endsWith(".jpeg") ||
+            name.endsWith(".png") ||
+            name.endsWith(".webp")
+        ) {
+            return "IMAGE";
+        }
+
+        return "FICHIER";
+    };
+
+    const formatDate = (date) => {
+        if (!date) return "-";
+
+        return new Date(date).toLocaleDateString(
+            "fr-FR",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }
+        );
+    };
+
+    const formatSize = (size) => {
+        if (!size) return "-";
+
+        const bytes = Number(size);
+
+        if (Number.isNaN(bytes)) {
+            return size;
+        }
+
+        if (bytes < 1024) {
+            return `${bytes} B`;
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${(bytes / 1024).toFixed(1)} KB`;
+        }
+
+        if (bytes < 1024 * 1024 * 1024) {
+            return `${(
+                bytes /
+                (1024 * 1024)
+            ).toFixed(1)} MB`;
+        }
+
+        return `${(
+            bytes /
+            (1024 * 1024 * 1024)
+        ).toFixed(1)} GB`;
+    };
+
+    const filteredDocuments = documents.filter(
+        (document) => {
+            const search =
+                searchTerm.toLowerCase().trim();
+
+            const title =
+                document.title || "";
+
+            const description =
+                document.description || "";
+
+            const folderName =
+                document.folder?.name ||
+                document.folder_name ||
+                "";
+
+            const fileName =
+                document.file_name ||
+                document.filename ||
+                "";
+
+            const fileType = (
+                document.file_type ||
+                document.mime_type ||
+                ""
+            ).toLowerCase();
+
+            const matchesSearch =
+                !search ||
+                title.toLowerCase().includes(search) ||
+                description
+                    .toLowerCase()
+                    .includes(search) ||
+                folderName
+                    .toLowerCase()
+                    .includes(search) ||
+                fileName
+                    .toLowerCase()
+                    .includes(search);
+
+            const matchesType =
+                typeFilter === "all" ||
+                fileType.includes(
+                    typeFilter.toLowerCase()
+                ) ||
+                (
+                    typeFilter === "word" &&
+                    (
+                        fileName.endsWith(".doc") ||
+                        fileName.endsWith(".docx")
+                    )
+                ) ||
+                (
+                    typeFilter === "excel" &&
+                    (
+                        fileName.endsWith(".xls") ||
+                        fileName.endsWith(".xlsx")
+                    )
+                );
+
+            return (
+                matchesSearch &&
+                matchesType
+            );
+        }
+    );
 
     return (
+        <main className="documents-main">
 
-        <div className="dashboard-layout">
+            <header className="documents-header">
 
+                <div>
+                    <h1>Documents</h1>
 
-            {/* SIDEBAR */}
+                    <p>
+                        Gérez et organisez vos documents
+                        facilement.
+                    </p>
+                </div>
 
-            <Sidebar />
+                <div className="documents-tools">
 
+                    <div className="document-search">
+                        <span>🔍</span>
 
-            {/* MAIN */}
-
-            <main className="documents-main">
-
-
-                {/* ==================================
-                    HEADER
-                ================================== */}
-
-                <header className="documents-header">
-
-                    <div>
-
-                        <h1>
-                            Documents
-                        </h1>
-
-                        <p>
-                            Gestion des documents
-                        </p>
-
+                        <input
+                            type="text"
+                            placeholder="Rechercher un document..."
+                            value={searchTerm}
+                            onChange={(e) =>
+                                setSearchTerm(e.target.value)
+                            }
+                        />
                     </div>
 
+                    <select
+                        className="document-filter"
+                        value={typeFilter}
+                        onChange={(e) =>
+                            setTypeFilter(e.target.value)
+                        }
+                    >
+                        <option value="all">
+                            Tous les types
+                        </option>
+
+                        <option value="pdf">
+                            PDF
+                        </option>
+
+                        <option value="word">
+                            Word
+                        </option>
+
+                        <option value="excel">
+                            Excel
+                        </option>
+
+                        <option value="image">
+                            Images
+                        </option>
+                    </select>
 
                     <button
                         type="button"
                         className="add-document-button"
-                        onClick={
-                            openCreateModal
-                        }
+                        onClick={openCreateModal}
                     >
                         + Nouveau document
                     </button>
 
-                </header>
+                </div>
 
+            </header>
 
-                {/* ==================================
-                    CONTENT
-                ================================== */}
+            <section className="documents-content">
 
-                <section
-                    className="documents-content"
-                >
+                {error && (
+                    <div className="documents-error">
+                        {error}
+                    </div>
+                )}
 
+                <div className="documents-stats">
 
-                    {/* LOADING */}
+                    <div className="document-stat-card">
+                        <div className="document-stat-icon">
+                            📄
+                        </div>
 
-                    {loading && (
+                        <div className="document-stat-info">
+                            <span>Total documents</span>
+                            <strong>
+                                {documents.length}
+                            </strong>
+                        </div>
+                    </div>
 
-                        <p
-                            className="documents-message"
-                        >
-                            Chargement des documents...
-                        </p>
+                    <div className="document-stat-card">
+                        <div className="document-stat-icon">
+                            📁
+                        </div>
 
-                    )}
+                        <div className="document-stat-info">
+                            <span>Dossiers</span>
+                            <strong>
+                                {folders.length}
+                            </strong>
+                        </div>
+                    </div>
 
+                    <div className="document-stat-card">
+                        <div className="document-stat-icon">
+                            🔎
+                        </div>
 
-                    {/* ERROR */}
+                        <div className="document-stat-info">
+                            <span>Résultats</span>
+                            <strong>
+                                {filteredDocuments.length}
+                            </strong>
+                        </div>
+                    </div>
 
-                    {error &&
-                        !showModal && (
+                </div>
 
-                            <p
-                                className="documents-error"
-                            >
-                                {error}
-                            </p>
+                {loading && (
+                    <div className="documents-message">
+                        Chargement des documents...
+                    </div>
+                )}
 
-                        )
-                    }
+                {!loading &&
+                    filteredDocuments.length === 0 && (
+                        <div className="empty-documents">
 
-
-                    {/* EMPTY */}
-
-                    {!loading &&
-                        !error &&
-                        documents.length === 0 && (
-
-                            <div
-                                className="empty-documents"
-                            >
-
-                                <div
-                                    className="empty-document-icon"
-                                >
-                                    📄
-                                </div>
-
-
-                                <h2>
-                                    Aucun document
-                                </h2>
-
-
-                                <p>
-                                    Vous n'avez pas encore de document.
-                                </p>
-
+                            <div className="empty-document-icon">
+                                📄
                             </div>
 
-                        )
-                    }
+                            <h2>
+                                {searchTerm
+                                    ? "Aucun document trouvé"
+                                    : "Aucun document"}
+                            </h2>
 
+                            <p>
+                                {searchTerm
+                                    ? "Essayez avec un autre terme de recherche."
+                                    : "Vous n'avez pas encore de document."}
+                            </p>
 
-                    {/* DOCUMENTS */}
+                        </div>
+                    )}
 
-                    {!loading &&
-                        documents.length > 0 && (
+                {!loading &&
+                    filteredDocuments.length > 0 && (
+                        <div className="documents-table-wrapper">
 
-                            <div
-                                className="documents-table-wrapper"
-                            >
+                            <table className="documents-table">
 
-                                <table
-                                    className="documents-table"
-                                >
+                                <thead>
+                                    <tr>
+                                        <th>DOCUMENT</th>
+                                        <th>TYPE</th>
+                                        <th>DOSSIER</th>
+                                        <th>TAILLE</th>
+                                        <th>DATE</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
 
-                                    <thead>
+                                <tbody>
 
-                                        <tr>
+                                    {filteredDocuments.map(
+                                        (document) => (
+                                            <tr
+                                                key={document.id}
+                                            >
 
-                                            <th>
-                                                Document
-                                            </th>
+                                                <td>
+                                                    <div className="document-name">
 
-                                            <th>
-                                                Type
-                                            </th>
+                                                        <span>
+                                                            {getFileIcon(
+                                                                document
+                                                            )}
+                                                        </span>
 
-                                            <th>
-                                                Taille
-                                            </th>
+                                                        <strong>
+                                                            {
+                                                                document.title
+                                                            }
+                                                        </strong>
 
-                                            <th>
-                                                Dossier
-                                            </th>
+                                                    </div>
+                                                </td>
 
-                                            <th>
-                                                Actions
-                                            </th>
+                                                <td>
+                                                    <span className="document-type">
+                                                        {getFileType(
+                                                            document
+                                                        )}
+                                                    </span>
+                                                </td>
 
-                                        </tr>
-
-                                    </thead>
-
-
-                                    <tbody>
-
-                                        {documents.map(
-                                            (document) => (
-
-                                                <tr
-                                                    key={
-                                                        document.id
+                                                <td>
+                                                    {
+                                                        document.folder?.name ||
+                                                        document.folder_name ||
+                                                        "Aucun dossier"
                                                     }
-                                                >
+                                                </td>
 
+                                                <td>
+                                                    {formatSize(
+                                                        document.file_size ||
+                                                        document.size
+                                                    )}
+                                                </td>
 
-                                                    <td>
+                                                <td>
+                                                    {formatDate(
+                                                        document.created_at
+                                                    )}
+                                                </td>
 
-                                                        <div
-                                                            className="document-name"
-                                                        >
-
-                                                            <span>
-                                                                📄
-                                                            </span>
-
-
-                                                            <strong>
-                                                                {
-                                                                    document.title
-                                                                }
-                                                            </strong>
-
-                                                        </div>
-
-                                                    </td>
-
-
-                                                    <td>
-
-                                                        {
-                                                            document.file_type ||
-                                                            "-"
-                                                        }
-
-                                                    </td>
-
-
-                                                    <td>
-
-                                                        {
-                                                            document.file_size
-                                                                ? `${(
-                                                                    document.file_size /
-                                                                    1024
-                                                                ).toFixed(1)} KB`
-                                                                : "-"
-                                                        }
-
-                                                    </td>
-
-
-                                                    <td>
-
-                                                        {
-                                                            document.folder?.name ||
-                                                            "-"
-                                                        }
-
-                                                    </td>
-
-
-                                                    <td>
+                                                <td>
+                                                    <div className="document-actions">
 
                                                         <button
                                                             type="button"
                                                             className="document-action-button"
+                                                            onClick={() =>
+                                                                console.log(
+                                                                    document
+                                                                )
+                                                            }
                                                         >
                                                             Voir
                                                         </button>
-
 
                                                         <button
                                                             type="button"
@@ -724,314 +666,189 @@ function Documents() {
                                                             Supprimer
                                                         </button>
 
-                                                    </td>
+                                                    </div>
+                                                </td>
 
-                                                </tr>
+                                            </tr>
+                                        )
+                                    )}
 
-                                            )
-                                        )}
+                                </tbody>
 
-                                    </tbody>
+                            </table>
 
-                                </table>
+                        </div>
+                    )}
 
-                            </div>
+            </section>
 
-                        )
-                    }
-
-                </section>
-
-
-                {/* ==================================
-                    MODAL
-                ================================== */}
-
-                {showModal && (
-
-                    <div
-                        className="modal-overlay"
-                        onClick={
-                            closeModal
+            {showCreateModal && (
+                <div
+                    className="modal-overlay"
+                    onMouseDown={(e) => {
+                        if (
+                            e.target === e.currentTarget
+                        ) {
+                            closeCreateModal();
                         }
-                    >
+                    }}
+                >
 
+                    <div className="document-modal">
 
-                        <div
-                            className="document-modal"
-                            onClick={(event) =>
-                                event.stopPropagation()
-                            }
-                        >
+                        <div className="modal-header">
 
-
-                            {/* HEADER */}
-
-                            <div
-                                className="modal-header"
-                            >
-
+                            <div>
                                 <h2>
                                     Nouveau document
                                 </h2>
 
+                                <p className="modal-subtitle">
+                                    Ajoutez un nouveau document
+                                    à votre espace.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="modal-close"
+                                onClick={closeCreateModal}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                        <form
+                            onSubmit={
+                                handleCreateDocument
+                            }
+                        >
+
+                            <div className="form-group">
+
+                                <label htmlFor="title">
+                                    Titre du document
+                                </label>
+
+                                <input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="Ex : Contrat de travail"
+                                    required
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label htmlFor="description">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={
+                                        formData.description
+                                    }
+                                    onChange={handleChange}
+                                    placeholder="Description du document..."
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label htmlFor="folder_id">
+                                    Dossier
+                                </label>
+
+                                <select
+                                    id="folder_id"
+                                    name="folder_id"
+                                    value={
+                                        formData.folder_id
+                                    }
+                                    onChange={handleChange}
+                                >
+
+                                    <option value="">
+                                        Aucun dossier
+                                    </option>
+
+                                    {folders.map(
+                                        (folder) => (
+                                            <option
+                                                key={folder.id}
+                                                value={folder.id}
+                                            >
+                                                {folder.name}
+                                            </option>
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label htmlFor="file">
+                                    Fichier
+                                </label>
+
+                                <input
+                                    id="file"
+                                    name="file"
+                                    type="file"
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                                {formData.file && (
+                                    <small>
+                                        Fichier sélectionné :
+                                        {" "}
+                                        {formData.file.name}
+                                    </small>
+                                )}
+
+                            </div>
+
+                            <div className="modal-actions">
 
                                 <button
                                     type="button"
-                                    className="modal-close"
-                                    onClick={
-                                        closeModal
-                                    }
-                                    disabled={
-                                        uploading
-                                    }
+                                    className="cancel-button"
+                                    onClick={closeCreateModal}
+                                    disabled={creating}
                                 >
-                                    ×
+                                    Annuler
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="create-button"
+                                    disabled={creating}
+                                >
+                                    {creating
+                                        ? "Création..."
+                                        : "Créer le document"}
                                 </button>
 
                             </div>
 
-
-                            {/* FORM */}
-
-                            <form
-                                onSubmit={
-                                    handleSubmit
-                                }
-                            >
-
-
-                                {/* TITRE */}
-
-                                <div
-                                    className="form-group"
-                                >
-
-                                    <label
-                                        htmlFor="document-title"
-                                    >
-                                        Titre
-                                    </label>
-
-
-                                    <input
-                                        id="document-title"
-                                        type="text"
-                                        value={title}
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setTitle(
-                                                event.target.value
-                                            )
-                                        }
-                                        placeholder="Ex: Contrat de travail"
-                                        required
-                                    />
-
-                                </div>
-
-
-                                {/* DESCRIPTION */}
-
-                                <div
-                                    className="form-group"
-                                >
-
-                                    <label
-                                        htmlFor="document-description"
-                                    >
-                                        Description
-                                    </label>
-
-
-                                    <textarea
-                                        id="document-description"
-                                        value={
-                                            description
-                                        }
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setDescription(
-                                                event.target.value
-                                            )
-                                        }
-                                        placeholder="Description du document"
-                                        rows="4"
-                                    />
-
-                                </div>
-
-
-                                {/* DOSSIER */}
-
-                                <div
-                                    className="form-group"
-                                >
-
-                                    <label
-                                        htmlFor="document-folder"
-                                    >
-                                        Dossier
-                                    </label>
-
-
-                                    <select
-                                        id="document-folder"
-                                        value={
-                                            folderId
-                                        }
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setFolderId(
-                                                event.target.value
-                                            )
-                                        }
-                                    >
-
-                                        <option value="">
-                                            Aucun dossier
-                                        </option>
-
-
-                                        {folders.map(
-                                            (folder) => (
-
-                                                <option
-                                                    key={
-                                                        folder.id
-                                                    }
-                                                    value={
-                                                        folder.id
-                                                    }
-                                                >
-                                                    {
-                                                        folder.name
-                                                    }
-                                                </option>
-
-                                            )
-                                        )}
-
-                                    </select>
-
-                                </div>
-
-
-                                {/* FICHIER */}
-
-                                <div
-                                    className="form-group"
-                                >
-
-                                    <label
-                                        htmlFor="document-file"
-                                    >
-                                        Fichier
-                                    </label>
-
-
-                                    <input
-                                        id="document-file"
-                                        type="file"
-                                        onChange={
-                                            handleFileChange
-                                        }
-                                        required
-                                    />
-
-
-                                    {file && (
-
-                                        <small>
-
-                                            Fichier sélectionné :
-                                            {" "}
-
-                                            <strong>
-                                                {
-                                                    file.name
-                                                }
-                                            </strong>
-
-                                        </small>
-
-                                    )}
-
-
-                                    <small>
-                                        Taille maximale : 10 MB
-                                    </small>
-
-                                </div>
-
-
-                                {/* ERROR */}
-
-                                {error && (
-
-                                    <p
-                                        className="documents-error"
-                                    >
-                                        {error}
-                                    </p>
-
-                                )}
-
-
-                                {/* BUTTONS */}
-
-                                <div
-                                    className="modal-actions"
-                                >
-
-                                    <button
-                                        type="button"
-                                        className="cancel-button"
-                                        onClick={
-                                            closeModal
-                                        }
-                                        disabled={
-                                            uploading
-                                        }
-                                    >
-                                        Annuler
-                                    </button>
-
-
-                                    <button
-                                        type="submit"
-                                        className="create-button"
-                                        disabled={
-                                            uploading
-                                        }
-                                    >
-
-                                        {uploading
-                                            ? "Upload en cours..."
-                                            : "Ajouter le document"
-                                        }
-
-                                    </button>
-
-                                </div>
-
-                            </form>
-
-                        </div>
+                        </form>
 
                     </div>
 
-                )}
+                </div>
+            )}
 
-            </main>
-
-        </div>
+        </main>
     );
 }
-
-
-export default Documents;
-

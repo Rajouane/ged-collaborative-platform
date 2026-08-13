@@ -3,119 +3,69 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Space;
+use App\Models\SpaceMember;
 use Illuminate\Http\Request;
 
-class SpaceController extends Controller
+class SpaceMemberController extends Controller
 {
-    /**
-     * GET /api/spaces
-     */
     public function index()
     {
-        $spaces = Space::with([
-            'owner',
-            'members'
-        ])
-        ->latest()
-        ->get();
-
-        return response()->json($spaces);
+        return response()->json(
+            SpaceMember::with(['space', 'user'])->get()
+        );
     }
 
-    /**
-     * POST /api/spaces
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_private' => 'nullable|boolean',
-            'owner_id' => 'required|exists:users,id',
+            'space_id' => 'required|exists:spaces,id',
+            'user_id' => 'required|exists:users,id',
+            'role' => 'nullable|string|max:255',
         ]);
 
-        $space = Space::create([
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'is_private' => $validated['is_private'] ?? false,
-            'owner_id' => $validated['owner_id'],
-        ]);
-
-        // Ajouter automatiquement le propriétaire
-        // comme membre avec le rôle owner
-        $space->members()->syncWithoutDetaching([
-            $validated['owner_id'] => [
-                'role' => 'owner'
-            ]
+        $member = SpaceMember::create([
+            'space_id' => $validated['space_id'],
+            'user_id' => $validated['user_id'],
+            'role' => $validated['role'] ?? 'member',
         ]);
 
         return response()->json(
-            $space->load([
-                'owner',
-                'members'
-            ]),
+            $member->load(['space', 'user']),
             201
         );
     }
 
-    /**
-     * GET /api/spaces/{id}
-     */
     public function show(string $id)
     {
-        $space = Space::with([
-            'owner',
-            'members'
-        ])->findOrFail($id);
+        $member = SpaceMember::with(['space', 'user'])
+            ->findOrFail($id);
 
-        return response()->json($space);
+        return response()->json($member);
     }
 
-    /**
-     * PUT /api/spaces/{id}
-     */
     public function update(Request $request, string $id)
     {
-        $space = Space::findOrFail($id);
+        $member = SpaceMember::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'is_private' => 'nullable|boolean',
-            'owner_id' => 'sometimes|required|exists:users,id',
+            'role' => 'required|string|max:255',
         ]);
 
-        $space->update($validated);
-
-        // Si le propriétaire change
-        if (isset($validated['owner_id'])) {
-            $space->members()->syncWithoutDetaching([
-                $validated['owner_id'] => [
-                    'role' => 'owner'
-                ]
-            ]);
-        }
+        $member->update($validated);
 
         return response()->json(
-            $space->fresh()->load([
-                'owner',
-                'members'
-            ])
+            $member->load(['space', 'user'])
         );
     }
 
-    /**
-     * DELETE /api/spaces/{id}
-     */
     public function destroy(string $id)
     {
-        $space = Space::findOrFail($id);
+        $member = SpaceMember::findOrFail($id);
 
-        $space->delete();
+        $member->delete();
 
         return response()->json([
-            'message' => 'Espace supprimé avec succès.'
+            'message' => 'Membre supprimé avec succès.'
         ]);
     }
 }

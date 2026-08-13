@@ -9,7 +9,7 @@ export default function Notifications() {
     const [error, setError] = useState("");
 
     // ==========================================
-    // CHARGER LES NOTIFICATIONS
+    // RÉCUPÉRER LES NOTIFICATIONS
     // ==========================================
 
     const fetchNotifications = async () => {
@@ -19,23 +19,56 @@ export default function Notifications() {
 
             const response = await api.get("/notifications");
 
-            console.log(
-                "Notifications Laravel :",
-                response.data
-            );
+            console.log("Status notifications :", response.status);
+            console.log("Notifications Laravel :", response.data);
 
-            setNotifications(response.data);
+            // Laravel doit normalement retourner un tableau
+            if (Array.isArray(response.data)) {
+                setNotifications(response.data);
+            } else {
+                // Protection si Laravel retourne :
+                // { notifications: [...] }
+                if (Array.isArray(response.data.notifications)) {
+                    setNotifications(response.data.notifications);
+                } else {
+                    setNotifications([]);
+                }
+            }
 
-        } catch (error) {
+        } catch (err) {
             console.error(
                 "Erreur récupération notifications :",
-                error
+                err
             );
 
-            setError(
-                error.response?.data?.message ||
-                "Impossible de récupérer les notifications."
+            console.error(
+                "Status :",
+                err.response?.status
             );
+
+            console.error(
+                "Réponse Laravel :",
+                err.response?.data
+            );
+
+            if (err.response?.status === 401) {
+                setError(
+                    "Votre session a expiré. Veuillez vous reconnecter."
+                );
+            } else if (err.response?.status === 404) {
+                setError(
+                    "La route des notifications est introuvable."
+                );
+            } else if (err.response?.status === 500) {
+                setError(
+                    "Erreur interne du serveur Laravel."
+                );
+            } else {
+                setError(
+                    err.response?.data?.message ||
+                    "Impossible de récupérer les notifications."
+                );
+            }
 
         } finally {
             setLoading(false);
@@ -51,25 +84,29 @@ export default function Notifications() {
     }, []);
 
     // ==========================================
-    // NOTIFICATIONS NON LUES
+    // COMPTER LES NOTIFICATIONS NON LUES
     // ==========================================
 
     const unreadCount = notifications.filter(
-        (notification) => !notification.is_read
+        (notification) =>
+            notification.is_read === false ||
+            notification.is_read === 0
     ).length;
 
     // ==========================================
-    // MARQUER COMME LUE
+    // MARQUER UNE NOTIFICATION COMME LUE
     // ==========================================
 
     const markAsRead = async (id) => {
         try {
+            setError("");
+
             const response = await api.put(
                 `/notifications/${id}`
             );
 
             console.log(
-                "Notification lue :",
+                "Notification marquée comme lue :",
                 response.data
             );
 
@@ -85,14 +122,14 @@ export default function Notifications() {
                 )
             );
 
-        } catch (error) {
+        } catch (err) {
             console.error(
-                "Erreur notification :",
-                error
+                "Erreur marquage notification :",
+                err
             );
 
             setError(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Impossible de marquer la notification comme lue."
             );
         }
@@ -104,8 +141,10 @@ export default function Notifications() {
 
     const markAllAsRead = async () => {
         try {
+            setError("");
+
             await api.put(
-                "/notifications-read-all"
+                "/notifications/read-all"
             );
 
             setNotifications((currentNotifications) =>
@@ -117,26 +156,26 @@ export default function Notifications() {
                 )
             );
 
-        } catch (error) {
+        } catch (err) {
             console.error(
-                "Erreur marquage notifications :",
-                error
+                "Erreur marquage de toutes les notifications :",
+                err
             );
 
             setError(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Impossible de marquer les notifications comme lues."
             );
         }
     };
 
     // ==========================================
-    // SUPPRIMER
+    // SUPPRIMER UNE NOTIFICATION
     // ==========================================
 
     const deleteNotification = async (id) => {
         const confirmed = window.confirm(
-            "Voulez-vous supprimer cette notification ?"
+            "Voulez-vous vraiment supprimer cette notification ?"
         );
 
         if (!confirmed) {
@@ -144,6 +183,8 @@ export default function Notifications() {
         }
 
         try {
+            setError("");
+
             await api.delete(
                 `/notifications/${id}`
             );
@@ -156,21 +197,21 @@ export default function Notifications() {
                     )
             );
 
-        } catch (error) {
+        } catch (err) {
             console.error(
                 "Erreur suppression notification :",
-                error
+                err
             );
 
             setError(
-                error.response?.data?.message ||
+                err.response?.data?.message ||
                 "Impossible de supprimer la notification."
             );
         }
     };
 
     // ==========================================
-    // FORMAT DATE
+    // FORMATTER LA DATE
     // ==========================================
 
     const formatDate = (date) => {
@@ -178,7 +219,13 @@ export default function Notifications() {
             return "";
         }
 
-        return new Date(date).toLocaleString(
+        const formattedDate = new Date(date);
+
+        if (Number.isNaN(formattedDate.getTime())) {
+            return "";
+        }
+
+        return formattedDate.toLocaleString(
             "fr-FR",
             {
                 day: "2-digit",
@@ -191,17 +238,34 @@ export default function Notifications() {
     };
 
     // ==========================================
+    // DÉTERMINER SI UNE NOTIFICATION EST LUE
+    // ==========================================
+
+    const isRead = (notification) => {
+        return (
+            notification.is_read === true ||
+            notification.is_read === 1
+        );
+    };
+
+    // ==========================================
     // AFFICHAGE
     // ==========================================
 
     return (
         <div className="dashboard-layout">
 
+            {/* SIDEBAR */}
+
             <Sidebar />
+
+            {/* CONTENU PRINCIPAL */}
 
             <main className="notifications-main">
 
-                {/* HEADER */}
+                {/* =========================
+                    HEADER
+                ========================== */}
 
                 <header className="notifications-header">
 
@@ -228,7 +292,9 @@ export default function Notifications() {
 
                 </header>
 
-                {/* STATISTIQUE */}
+                {/* =========================
+                    RÉSUMÉ
+                ========================== */}
 
                 <div className="notification-summary">
 
@@ -248,24 +314,47 @@ export default function Notifications() {
 
                 </div>
 
-                {/* ERREUR */}
+                {/* =========================
+                    ERREUR
+                ========================== */}
 
                 {error && (
                     <div className="notification-error">
-                        {error}
+
+                        <span>
+                            ⚠️
+                        </span>
+
+                        <span>
+                            {error}
+                        </span>
+
                     </div>
                 )}
 
-                {/* CHARGEMENT */}
+                {/* =========================
+                    CHARGEMENT
+                ========================== */}
 
                 {loading ? (
+
                     <div className="notifications-loading">
-                        Chargement des notifications...
+
+                        <div className="loading-icon">
+                            🔔
+                        </div>
+
+                        <p>
+                            Chargement des notifications...
+                        </p>
+
                     </div>
 
                 ) : notifications.length === 0 ? (
 
-                    /* AUCUNE NOTIFICATION */
+                    /* =========================
+                       AUCUNE NOTIFICATION
+                    ========================== */
 
                     <div className="notifications-empty">
 
@@ -282,102 +371,128 @@ export default function Notifications() {
                             notification pour le moment.
                         </p>
 
+                        <button
+                            type="button"
+                            className="refresh-button"
+                            onClick={fetchNotifications}
+                        >
+                            🔄 Actualiser
+                        </button>
+
                     </div>
 
                 ) : (
 
-                    /* LISTE */
+                    /* =========================
+                       LISTE DES NOTIFICATIONS
+                    ========================== */
 
                     <div className="notifications-list">
 
                         {notifications.map(
-                            (notification) => (
+                            (notification) => {
 
-                                <div
-                                    key={notification.id}
-                                    className={`notification-card ${
-                                        notification.is_read
-                                            ? "read"
-                                            : "unread"
-                                    }`}
-                                >
+                                const notificationIsRead =
+                                    isRead(notification);
 
-                                    {/* ICON */}
+                                return (
+                                    <div
+                                        key={notification.id}
+                                        className={`notification-card ${
+                                            notificationIsRead
+                                                ? "read"
+                                                : "unread"
+                                        }`}
+                                    >
 
-                                    <div className="notification-icon">
-                                        {notification.is_read
-                                            ? "✓"
-                                            : "🔔"}
-                                    </div>
+                                        {/* ICÔNE */}
 
-                                    {/* CONTENU */}
+                                        <div
+                                            className="notification-icon"
+                                        >
+                                            {notificationIsRead
+                                                ? "✓"
+                                                : "🔔"}
+                                        </div>
 
-                                    <div className="notification-content">
+                                        {/* CONTENU */}
 
-                                        <div className="notification-title-row">
+                                        <div
+                                            className="notification-content"
+                                        >
 
-                                            <h3>
+                                            <div
+                                                className="notification-title-row"
+                                            >
+
+                                                <h3>
+                                                    {
+                                                        notification.title
+                                                    }
+                                                </h3>
+
+                                                {!notificationIsRead && (
+                                                    <span
+                                                        className="unread-badge"
+                                                    >
+                                                        Nouveau
+                                                    </span>
+                                                )}
+
+                                            </div>
+
+                                            <p>
                                                 {
-                                                    notification.title
+                                                    notification.message
                                                 }
-                                            </h3>
+                                            </p>
 
-                                            {!notification.is_read && (
-                                                <span className="unread-badge">
-                                                    Nouveau
-                                                </span>
-                                            )}
+                                            <small>
+                                                {formatDate(
+                                                    notification.created_at
+                                                )}
+                                            </small>
 
                                         </div>
 
-                                        <p>
-                                            {
-                                                notification.message
-                                            }
-                                        </p>
+                                        {/* ACTIONS */}
 
-                                        <small>
-                                            {formatDate(
-                                                notification.created_at
+                                        <div
+                                            className="notification-actions"
+                                        >
+
+                                            {!notificationIsRead && (
+                                                <button
+                                                    type="button"
+                                                    className="read-button"
+                                                    onClick={() =>
+                                                        markAsRead(
+                                                            notification.id
+                                                        )
+                                                    }
+                                                >
+                                                    ✓ Lire
+                                                </button>
                                             )}
-                                        </small>
 
-                                    </div>
-
-                                    {/* ACTIONS */}
-
-                                    <div className="notification-actions">
-
-                                        {!notification.is_read && (
                                             <button
                                                 type="button"
-                                                className="read-button"
+                                                className="delete-button"
+                                                title="Supprimer"
                                                 onClick={() =>
-                                                    markAsRead(
+                                                    deleteNotification(
                                                         notification.id
                                                     )
                                                 }
                                             >
-                                                ✓ Lire
+                                                🗑️
                                             </button>
-                                        )}
 
-                                        <button
-                                            type="button"
-                                            className="delete-button"
-                                            onClick={() =>
-                                                deleteNotification(
-                                                    notification.id
-                                                )
-                                            }
-                                        >
-                                            🗑️
-                                        </button>
+                                        </div>
 
                                     </div>
-
-                                </div>
-                            )
+                                );
+                            }
                         )}
 
                     </div>
