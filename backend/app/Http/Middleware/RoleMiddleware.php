@@ -8,19 +8,44 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
-    {
+    public function handle(
+        Request $request,
+        Closure $next,
+        string ...$roles
+    ): Response {
         $user = $request->user();
 
         if (!$user) {
             return response()->json([
-                'message' => 'Non authentifié.'
+                'success' => false,
+                'message' => 'Non authentifié.',
             ], 401);
         }
 
-        if (!$user->role || !in_array($user->role->name, $roles)) {
+        $user->loadMissing('role');
+
+        if (!$user->role) {
             return response()->json([
-                'message' => 'Accès refusé.'
+                'success' => false,
+                'message' => 'Aucun rôle associé à cet utilisateur.',
+            ], 403);
+        }
+
+        $roleName = strtolower(
+            trim($user->role->name)
+        );
+
+        $allowedRoles = array_map(
+            fn ($role) => strtolower(trim($role)),
+            $roles
+        );
+
+        if (!in_array($roleName, $allowedRoles, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Accès refusé.',
+                'role' => $user->role->name,
+                'required_roles' => $roles,
             ], 403);
         }
 

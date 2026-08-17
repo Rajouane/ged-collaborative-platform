@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
 {
     /**
-     * Display a listing of the announcements.
+     * GET /api/announcements
      */
-    public function index()
+    public function index(Request $request)
     {
         $announcements = Announcement::with('user')
             ->latest()
@@ -20,27 +22,64 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'data' => $announcements,
-        ], 200);
+        ]);
     }
 
-
     /**
-     * Store a newly created announcement.
+     * POST /api/announcements
      */
     public function store(Request $request)
     {
-        // Vérifier l'utilisateur connecté
         $user = $request->user();
 
         if (!$user) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Utilisateur non authentifié.',
+                'message' =>
+                    'Utilisateur non authentifié.',
             ], 401);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | ROLE
+        |--------------------------------------------------------------------------
+        */
 
-        // Validation
+        $role = $user->role
+            ? strtolower(trim($user->role->name))
+            : '';
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEUL ADMIN ET RESPONSABLE
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !in_array(
+                $role,
+                [
+                    'administrateur',
+                    'responsable',
+                ]
+            )
+        ) {
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    "Vous n'êtes pas autorisé à publier une annonce.",
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
         $validated = $request->validate([
             'title' => [
                 'required',
@@ -54,70 +93,172 @@ class AnnouncementController extends Controller
             ],
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE
+        |--------------------------------------------------------------------------
+        */
 
-        // Création de l'annonce
         $announcement = Announcement::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'user_id' => $user->id,
+            'title' =>
+                trim($validated['title']),
+
+            'content' =>
+                trim($validated['content']),
+
+            'user_id' =>
+                $user->id,
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | NOTIFICATIONS
+        |--------------------------------------------------------------------------
+        */
 
-        // Charger l'utilisateur
+        $users = User::where(
+            'is_active',
+            true
+        )
+        ->where(
+            'id',
+            '!=',
+            $user->id
+        )
+        ->get();
+
+        foreach ($users as $recipient) {
+
+            Notification::create([
+                'user_id' =>
+                    $recipient->id,
+
+                'title' =>
+                    'Nouvelle annonce',
+
+                'message' =>
+                    $user->first_name .
+                    ' ' .
+                    $user->last_name .
+                    ' a publié une nouvelle annonce : "' .
+                    $announcement->title .
+                    '"',
+
+                'is_read' => false,
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD USER
+        |--------------------------------------------------------------------------
+        */
+
         $announcement->load('user');
-
 
         return response()->json([
             'success' => true,
-            'message' => 'Annonce créée avec succès.',
-            'data' => $announcement,
+            'message' =>
+                'Annonce créée avec succès.',
+            'data' =>
+                $announcement,
         ], 201);
     }
 
-
     /**
-     * Display the specified announcement.
+     * GET /api/announcements/{id}
      */
-    public function show(string $id)
-    {
-        $announcement = Announcement::with('user')
-            ->find($id);
-
+    public function show(
+        Request $request,
+        string $id
+    ) {
+        $announcement =
+            Announcement::with('user')
+                ->find($id);
 
         if (!$announcement) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Annonce introuvable.',
+                'message' =>
+                    'Annonce introuvable.',
             ], 404);
         }
 
-
         return response()->json([
             'success' => true,
-            'data' => $announcement,
-        ], 200);
+            'data' =>
+                $announcement,
+        ]);
     }
 
-
     /**
-     * Update the specified announcement.
+     * PUT /api/announcements/{id}
      */
     public function update(
         Request $request,
         string $id
     ) {
-        $announcement = Announcement::find($id);
+        $user = $request->user();
 
+        if (!$user) {
+
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.',
+            ], 401);
+        }
+
+        $role = $user->role
+            ? strtolower(trim($user->role->name))
+            : '';
+
+        if (
+            !in_array(
+                $role,
+                [
+                    'administrateur',
+                    'responsable',
+                ]
+            )
+        ) {
+
+            return response()->json([
+                'message' =>
+                    "Vous n'êtes pas autorisé à modifier une annonce.",
+            ], 403);
+        }
+
+        $announcement =
+            Announcement::find($id);
 
         if (!$announcement) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Annonce introuvable.',
+                'message' =>
+                    'Annonce introuvable.',
             ], 404);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | RESPONSABLE
+        |--------------------------------------------------------------------------
+        */
 
-        // Validation
+        if (
+            $role === 'responsable' &&
+            (int) $announcement->user_id !==
+            (int) $user->id
+        ) {
+
+            return response()->json([
+                'message' =>
+                    'Vous ne pouvez modifier que vos propres annonces.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'title' => [
                 'required',
@@ -131,49 +272,97 @@ class AnnouncementController extends Controller
             ],
         ]);
 
-
-        // Modification
         $announcement->update([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
+            'title' =>
+                trim($validated['title']),
+
+            'content' =>
+                trim($validated['content']),
         ]);
 
-
-        // Charger l'utilisateur
         $announcement->load('user');
-
 
         return response()->json([
             'success' => true,
-            'message' => 'Annonce modifiée avec succès.',
-            'data' => $announcement,
-        ], 200);
+            'message' =>
+                'Annonce modifiée avec succès.',
+            'data' =>
+                $announcement,
+        ]);
     }
 
-
     /**
-     * Remove the specified announcement.
+     * DELETE /api/announcements/{id}
      */
-    public function destroy(string $id)
-    {
-        $announcement = Announcement::find($id);
+    public function destroy(
+        Request $request,
+        string $id
+    ) {
+        $user = $request->user();
 
+        if (!$user) {
+
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.',
+            ], 401);
+        }
+
+        $role = $user->role
+            ? strtolower(trim($user->role->name))
+            : '';
+
+        if (
+            !in_array(
+                $role,
+                [
+                    'administrateur',
+                    'responsable',
+                ]
+            )
+        ) {
+
+            return response()->json([
+                'message' =>
+                    "Vous n'êtes pas autorisé à supprimer une annonce.",
+            ], 403);
+        }
+
+        $announcement =
+            Announcement::find($id);
 
         if (!$announcement) {
+
             return response()->json([
-                'success' => false,
-                'message' => 'Annonce introuvable.',
+                'message' =>
+                    'Annonce introuvable.',
             ], 404);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | RESPONSABLE
+        |--------------------------------------------------------------------------
+        */
 
-        // Suppression
+        if (
+            $role === 'responsable' &&
+            (int) $announcement->user_id !==
+            (int) $user->id
+        ) {
+
+            return response()->json([
+                'message' =>
+                    'Vous ne pouvez supprimer que vos propres annonces.',
+            ], 403);
+        }
+
         $announcement->delete();
-
 
         return response()->json([
             'success' => true,
-            'message' => 'Annonce supprimée avec succès.',
-        ], 200);
+            'message' =>
+                'Annonce supprimée avec succès.',
+        ]);
     }
 }

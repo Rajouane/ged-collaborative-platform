@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Space extends Model
 {
@@ -23,15 +24,18 @@ class Space extends Model
     ];
 
     /**
-     * Propriétaire de l'espace.
+     * Propriétaire du Space
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(
+            User::class,
+            'owner_id'
+        );
     }
 
     /**
-     * Membres de l'espace.
+     * Membres du Space
      */
     public function members(): BelongsToMany
     {
@@ -40,6 +44,30 @@ class Space extends Model
             'space_members',
             'space_id',
             'user_id'
-        )->withPivot('role')->withTimestamps();
+        )
+        ->withPivot('id')
+        ->withTimestamps();
+    }
+
+    /**
+     * Dossiers du Space
+     */
+    public function folders(): HasMany
+    {
+        return $this->hasMany(
+            Folder::class,
+            'space_id'
+        );
+    }
+
+    /**
+     * Documents du Space
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(
+            Document::class,
+            'space_id'
+        );
     }
 }

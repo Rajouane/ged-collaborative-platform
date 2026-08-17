@@ -1,708 +1,466 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import Sidebar from "./Sidebar";
 import "./Spaces.css";
 
 export default function Spaces() {
-    const [spaces, setSpaces] = useState([]);
-    const [users, setUsers] = useState([]);
+    const navigate = useNavigate();
 
+    const [spaces, setSpaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const [search, setSearch] = useState("");
-
-    const [showModal, setShowModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [createError, setCreateError] = useState("");
 
     const [form, setForm] = useState({
         name: "",
         description: "",
         is_private: false,
-        owner_id: "",
     });
 
-    const [saving, setSaving] = useState(false);
+    /* =========================================================
+       USER / ROLE
+    ========================================================= */
 
-    // ==========================================
-    // CHARGER LES ESPACES
-    // ==========================================
+    const getCurrentUser = () => {
+        try {
+            const storedUser = localStorage.getItem("user");
 
-    const fetchSpaces = async () => {
+            if (!storedUser) {
+                return null;
+            }
+
+            return JSON.parse(storedUser);
+        } catch (error) {
+            console.error("Erreur utilisateur:", error);
+            return null;
+        }
+    };
+
+    const currentUser = getCurrentUser();
+
+    const isAdmin =
+        currentUser?.role_id === 1 ||
+        currentUser?.role?.id === 1 ||
+        currentUser?.role?.name?.toLowerCase() === "admin" ||
+        currentUser?.role?.name?.toLowerCase() === "administrateur" ||
+        currentUser?.role_name?.toLowerCase() === "admin" ||
+        currentUser?.role_name?.toLowerCase() === "administrateur";
+
+    /* =========================================================
+       LOAD SPACES
+    ========================================================= */
+
+    const loadSpaces = async () => {
         try {
             setLoading(true);
             setError("");
 
             const response = await api.get("/spaces");
 
-            console.log("Spaces Laravel :", response.data);
+            const data =
+                Array.isArray(response.data)
+                    ? response.data
+                    : response.data?.data || [];
 
-            setSpaces(response.data);
-
+            setSpaces(data);
         } catch (err) {
-            console.error(
-                "Erreur récupération espaces :",
-                err
-            );
+            console.error("Erreur espaces:", err);
 
             setError(
                 err.response?.data?.message ||
-                "Impossible de récupérer les espaces."
+                "Impossible de charger les espaces."
             );
         } finally {
             setLoading(false);
         }
     };
 
-    // ==========================================
-    // CHARGER LES UTILISATEURS
-    // ==========================================
-
-    const fetchUsers = async () => {
-        try {
-            const response = await api.get("/users");
-
-            console.log(
-                "Utilisateurs Laravel :",
-                response.data
-            );
-
-            setUsers(response.data);
-
-        } catch (err) {
-            console.error(
-                "Erreur récupération utilisateurs :",
-                err
-            );
-        }
-    };
-
-    // ==========================================
-    // CHARGEMENT INITIAL
-    // ==========================================
-
     useEffect(() => {
-        fetchSpaces();
-        fetchUsers();
+        loadSpaces();
     }, []);
 
-    // ==========================================
-    // RECHERCHE
-    // ==========================================
+    /* =========================================================
+       CREATE SPACE
+    ========================================================= */
 
-    const filteredSpaces = spaces.filter((space) => {
-        const text = `
-            ${space.name}
-            ${space.description || ""}
-            ${space.owner?.first_name || ""}
-            ${space.owner?.last_name || ""}
-            ${space.owner?.email || ""}
-        `.toLowerCase();
-
-        return text.includes(
-            search.toLowerCase()
-        );
-    });
-
-    // ==========================================
-    // CHANGEMENT FORMULAIRE
-    // ==========================================
-
-    const handleChange = (event) => {
-        const { name, value, type, checked } =
-            event.target;
+    const openCreateModal = () => {
+        setCreateError("");
 
         setForm({
-            ...form,
+            name: "",
+            description: "",
+            is_private: false,
+        });
+
+        setShowCreateModal(true);
+    };
+
+    const closeCreateModal = () => {
+        if (creating) {
+            return;
+        }
+
+        setShowCreateModal(false);
+        setCreateError("");
+
+        setForm({
+            name: "",
+            description: "",
+            is_private: false,
+        });
+    };
+
+    const handleInput = (event) => {
+        const { name, value, type, checked } = event.target;
+
+        setForm((previous) => ({
+            ...previous,
             [name]:
                 type === "checkbox"
                     ? checked
                     : value,
-        });
+        }));
     };
 
-    // ==========================================
-    // OUVRIR MODAL
-    // ==========================================
-
-    const openModal = () => {
-        setForm({
-            name: "",
-            description: "",
-            is_private: false,
-            owner_id: "",
-        });
-
-        setError("");
-        setShowModal(true);
-    };
-
-    // ==========================================
-    // FERMER MODAL
-    // ==========================================
-
-    const closeModal = () => {
-        if (saving) {
-            return;
-        }
-
-        setShowModal(false);
-
-        setForm({
-            name: "",
-            description: "",
-            is_private: false,
-            owner_id: "",
-        });
-
-        setError("");
-    };
-
-    // ==========================================
-    // CRÉER ESPACE
-    // ==========================================
-
-    const handleSubmit = async (event) => {
+    const handleCreateSpace = async (event) => {
         event.preventDefault();
 
-        setError("");
+        setCreateError("");
 
-        if (!form.name.trim()) {
-            setError(
-                "Le nom de l'espace est obligatoire."
+        const name = form.name.trim();
+
+        if (!name) {
+            setCreateError(
+                "Veuillez saisir le nom de l'espace."
             );
-
-            return;
-        }
-
-        if (!form.owner_id) {
-            setError(
-                "Veuillez sélectionner un propriétaire."
-            );
-
             return;
         }
 
         try {
-            setSaving(true);
+            setCreating(true);
 
-            const response = await api.post(
-                "/spaces",
-                {
-                    name: form.name,
-                    description: form.description,
-                    is_private: form.is_private,
-                    owner_id: form.owner_id,
-                }
-            );
+            const response = await api.post("/spaces", {
+                name,
+                description:
+                    form.description.trim() || null,
+                is_private: Boolean(form.is_private),
+            });
 
-            console.log(
-                "Espace créé :",
-                response.data
-            );
+            const createdSpace =
+                response.data?.data ||
+                response.data;
 
-            setSpaces((currentSpaces) => [
-                response.data,
-                ...currentSpaces,
-            ]);
-
-            closeModal();
-
-        } catch (err) {
-            console.error(
-                "Erreur création espace :",
-                err
-            );
-
-            console.error(
-                "Réponse Laravel :",
-                err.response?.data
-            );
-
-            if (
-                err.response?.data?.errors
-            ) {
-                const errors =
-                    err.response.data.errors;
-
-                const messages =
-                    Object.values(errors)
-                        .flat()
-                        .join(" ");
-
-                setError(messages);
-
+            /*
+             * On ajoute immédiatement le nouvel espace
+             * dans la liste.
+             */
+            if (createdSpace?.id) {
+                setSpaces((previous) => [
+                    createdSpace,
+                    ...previous,
+                ]);
             } else {
-                setError(
-                    err.response?.data?.message ||
-                    "Erreur lors de la création de l'espace."
-                );
+                /*
+                 * Si Laravel retourne une réponse différente,
+                 * on recharge la liste.
+                 */
+                await loadSpaces();
             }
 
-        } finally {
-            setSaving(false);
-        }
-    };
+            setShowCreateModal(false);
 
-    // ==========================================
-    // SUPPRIMER ESPACE
-    // ==========================================
-
-    const handleDelete = async (id) => {
-        const confirmed = window.confirm(
-            "Voulez-vous vraiment supprimer cet espace ?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            await api.delete(
-                `/spaces/${id}`
-            );
-
-            setSpaces(
-                (currentSpaces) =>
-                    currentSpaces.filter(
-                        (space) =>
-                            space.id !== id
-                    )
-            );
+            setForm({
+                name: "",
+                description: "",
+                is_private: false,
+            });
 
         } catch (err) {
             console.error(
-                "Erreur suppression espace :",
+                "Erreur création espace:",
                 err
             );
 
-            setError(
-                err.response?.data?.message ||
-                "Impossible de supprimer l'espace."
-            );
+            const validationErrors =
+                err.response?.data?.errors;
+
+            if (validationErrors) {
+                const firstError =
+                    Object.values(validationErrors)
+                        ?.flat?.()[0];
+
+                setCreateError(
+                    firstError ||
+                    "Les informations saisies sont invalides."
+                );
+            } else {
+                setCreateError(
+                    err.response?.data?.message ||
+                    "Impossible de créer l'espace."
+                );
+            }
+        } finally {
+            setCreating(false);
         }
     };
 
-    // ==========================================
-    // AFFICHAGE
-    // ==========================================
+    /* =========================================================
+       OPEN SPACE
+    ========================================================= */
+
+    const openSpace = (space) => {
+        if (!space?.id) {
+            return;
+        }
+
+        navigate(`/spaces/${space.id}`);
+    };
+
+    /* =========================================================
+       HELPERS
+    ========================================================= */
+
+    const getSpaceInitial = (space) => {
+        return (
+            space?.name
+                ?.charAt(0)
+                ?.toUpperCase() || "E"
+        );
+    };
+
+    const getMemberCount = (space) => {
+        return Number(
+            space?.members_count ??
+            space?.members?.length ??
+            0
+        );
+    };
+
+    /* =========================================================
+       RENDER
+    ========================================================= */
 
     return (
-        <div className="dashboard-layout">
+        <div className="spaces-page">
 
-            <Sidebar />
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
-            <main className="spaces-main">
+            <header className="spaces-header">
 
-                {/* ================= HEADER ================= */}
+                <div className="spaces-header-text">
 
-                <div className="spaces-header">
+                    <span className="page-label">
+                        COLLABORATION
+                    </span>
+
+                    <h1>
+                        Espaces
+                    </h1>
+
+                    <p>
+                        Gérez vos espaces de travail
+                        collaboratifs.
+                    </p>
+
+                </div>
+
+                {isAdmin && (
+                    <button
+                        type="button"
+                        className="create-space-button"
+                        onClick={openCreateModal}
+                    >
+                        <span className="create-space-plus">
+                            +
+                        </span>
+
+                        <span>
+                            Nouvel espace
+                        </span>
+                    </button>
+                )}
+
+            </header>
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+                <div className="spaces-error">
+                    <span>⚠</span>
 
                     <div>
-                        <h1>Espaces</h1>
-
-                        <p>
-                            Gérez les espaces collaboratifs
-                        </p>
+                        {error}
                     </div>
 
                     <button
                         type="button"
-                        className="add-space-btn"
-                        onClick={openModal}
+                        onClick={loadSpaces}
                     >
-                        + Nouvel espace
+                        Réessayer
                     </button>
+                </div>
+            )}
+
+            {/* =================================================
+                LOADING
+            ================================================= */}
+
+            {loading ? (
+
+                <div className="spaces-loading">
+
+                    <div className="spaces-spinner"></div>
+
+                    <p>
+                        Chargement des espaces...
+                    </p>
 
                 </div>
 
-                {/* ================= STATISTIQUES ================= */}
+            ) : spaces.length === 0 ? (
 
-                <div className="spaces-stats">
+                /* =============================================
+                   EMPTY
+                ============================================= */
 
-                    <div className="space-stat-card">
+                <div className="spaces-empty">
 
-                        <div className="space-stat-icon">
-                            📁
-                        </div>
-
-                        <div>
-                            <span>
-                                Total espaces
-                            </span>
-
-                            <strong>
-                                {spaces.length}
-                            </strong>
-                        </div>
-
+                    <div className="empty-icon">
+                        📁
                     </div>
 
+                    <h2>
+                        Aucun espace disponible
+                    </h2>
 
-                    <div className="space-stat-card">
+                    <p>
+                        {isAdmin
+                            ? "Créez votre premier espace de travail collaboratif."
+                            : "Vous n'avez accès à aucun espace collaboratif pour le moment."}
+                    </p>
 
-                        <div className="space-stat-icon">
-                            🔓
-                        </div>
-
-                        <div>
-                            <span>
-                                Espaces publics
-                            </span>
-
-                            <strong>
-                                {
-                                    spaces.filter(
-                                        (space) =>
-                                            !space.is_private
-                                    ).length
-                                }
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <div className="space-stat-card">
-
-                        <div className="space-stat-icon">
-                            🔒
-                        </div>
-
-                        <div>
-                            <span>
-                                Espaces privés
-                            </span>
-
-                            <strong>
-                                {
-                                    spaces.filter(
-                                        (space) =>
-                                            space.is_private
-                                    ).length
-                                }
-                            </strong>
-                        </div>
-
-                    </div>
+                    {isAdmin && (
+                        <button
+                            type="button"
+                            className="empty-create-space-button"
+                            onClick={openCreateModal}
+                        >
+                            + Créer mon premier espace
+                        </button>
+                    )}
 
                 </div>
 
-                {/* ================= CARD ================= */}
+            ) : (
 
-                <div className="spaces-card">
+                /* =============================================
+                   SPACES GRID
+                ============================================= */
 
-                    <div className="spaces-card-header">
+                <div className="spaces-grid">
 
-                        <div>
-                            <h2>
-                                Liste des espaces
-                            </h2>
+                    {spaces.map((space) => {
 
-                            <p>
-                                {filteredSpaces.length} espace
-                                {filteredSpaces.length > 1
-                                    ? "s"
-                                    : ""}
-                            </p>
-                        </div>
+                        const memberCount =
+                            getMemberCount(space);
 
-                        <div className="spaces-search">
-
-                            <span>
-                                🔍
-                            </span>
-
-                            <input
-                                type="text"
-                                placeholder="Rechercher un espace..."
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(
-                                        event.target.value
-                                    )
+                        return (
+                            <article
+                                className="space-card"
+                                key={space.id}
+                                onClick={() =>
+                                    openSpace(space)
                                 }
-                            />
+                            >
 
-                        </div>
+                                <div className="space-card-top">
 
-                    </div>
+                                    <div className="space-card-icon">
+                                        {getSpaceInitial(space)}
+                                    </div>
 
-                    {/* ================= CONTENT ================= */}
+                                    <div className="space-card-top-right">
 
-                    <div className="spaces-table-container">
+                                        {space.is_private && (
+                                            <span className="space-private-badge">
+                                                🔒 Privé
+                                            </span>
+                                        )}
 
-                        {loading ? (
+                                        <span className="space-arrow">
+                                            →
+                                        </span>
 
-                            <div className="spaces-loading">
-                                Chargement des espaces...
-                            </div>
+                                    </div>
 
-                        ) : filteredSpaces.length === 0 ? (
-
-                            <div className="spaces-empty">
-
-                                <div>
-                                    📁
                                 </div>
 
-                                <h3>
-                                    Aucun espace trouvé
-                                </h3>
+                                <div className="space-card-body">
 
-                                <p>
-                                    Créez votre premier espace
-                                    collaboratif.
-                                </p>
+                                    <h2>
+                                        {space.name}
+                                    </h2>
 
-                                <button
-                                    type="button"
-                                    onClick={openModal}
-                                >
-                                    + Créer un espace
-                                </button>
+                                    <p>
+                                        {space.description ||
+                                            "Aucune description pour cet espace."}
+                                    </p>
 
-                            </div>
+                                </div>
 
-                        ) : (
+                                <div className="space-card-footer">
 
-                            <table className="spaces-table">
+                                    <span className="space-members-info">
+                                        <span>
+                                            👥
+                                        </span>
 
-                                <thead>
+                                        {memberCount}{" "}
+                                        membre
+                                        {memberCount > 1
+                                            ? "s"
+                                            : ""}
+                                    </span>
 
-                                    <tr>
+                                    <span className="space-open-label">
+                                        Ouvrir →
+                                    </span>
 
-                                        <th>
-                                            Espace
-                                        </th>
+                                </div>
 
-                                        <th>
-                                            Description
-                                        </th>
-
-                                        <th>
-                                            Propriétaire
-                                        </th>
-
-                                        <th>
-                                            Type
-                                        </th>
-
-                                        <th>
-                                            Membres
-                                        </th>
-
-                                        <th>
-                                            Actions
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    {filteredSpaces.map(
-                                        (space) => (
-
-                                            <tr
-                                                key={
-                                                    space.id
-                                                }
-                                            >
-
-                                                {/* ESPACE */}
-
-                                                <td>
-
-                                                    <div className="space-info">
-
-                                                        <div className="space-icon">
-                                                            📁
-                                                        </div>
-
-                                                        <div>
-
-                                                            <strong>
-                                                                {
-                                                                    space.name
-                                                                }
-                                                            </strong>
-
-                                                            <small>
-                                                                ID #
-                                                                {
-                                                                    space.id
-                                                                }
-                                                            </small>
-
-                                                        </div>
-
-                                                    </div>
-
-                                                </td>
-
-                                                {/* DESCRIPTION */}
-
-                                                <td>
-
-                                                    <span className="space-description">
-
-                                                        {
-                                                            space.description ||
-                                                            "Aucune description"
-                                                        }
-
-                                                    </span>
-
-                                                </td>
-
-                                                {/* OWNER */}
-
-                                                <td>
-
-                                                    <div className="owner-info">
-
-                                                        <div className="owner-avatar">
-
-                                                            {space.owner?.first_name?.charAt(0)}
-                                                            {space.owner?.last_name?.charAt(0)}
-
-                                                        </div>
-
-                                                        <div>
-
-                                                            <strong>
-
-                                                                {
-                                                                    space.owner
-                                                                        ? `${space.owner.first_name} ${space.owner.last_name}`
-                                                                        : "Non défini"
-                                                                }
-
-                                                            </strong>
-
-                                                            <small>
-
-                                                                {
-                                                                    space.owner?.email ||
-                                                                    ""
-                                                                }
-
-                                                            </small>
-
-                                                        </div>
-
-                                                    </div>
-
-                                                </td>
-
-                                                {/* TYPE */}
-
-                                                <td>
-
-                                                    {space.is_private ? (
-
-                                                        <span className="space-type private">
-                                                            🔒 Privé
-                                                        </span>
-
-                                                    ) : (
-
-                                                        <span className="space-type public">
-                                                            🔓 Public
-                                                        </span>
-
-                                                    )}
-
-                                                </td>
-
-                                                {/* MEMBRES */}
-
-                                                <td>
-
-                                                    <span className="members-count">
-
-                                                        👥
-
-                                                        {" "}
-
-                                                        {
-                                                            space.members?.length ||
-                                                            0
-                                                        }
-
-                                                    </span>
-
-                                                </td>
-
-                                                {/* ACTIONS */}
-
-                                                <td>
-
-                                                    <div className="space-actions">
-
-                                                        <button
-                                                            type="button"
-                                                            className="space-action view"
-                                                            title="Voir"
-                                                            onClick={() =>
-                                                                alert(
-                                                                    `Espace : ${space.name}`
-                                                                )
-                                                            }
-                                                        >
-                                                            👁️
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            className="space-action delete"
-                                                            title="Supprimer"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    space.id
-                                                                )
-                                                            }
-                                                        >
-                                                            🗑️
-                                                        </button>
-
-                                                    </div>
-
-                                                </td>
-
-                                            </tr>
-
-                                        )
-                                    )}
-
-                                </tbody>
-
-                            </table>
-
-                        )}
-
-                    </div>
+                            </article>
+                        );
+                    })}
 
                 </div>
+            )}
 
-            </main>
+            {/* =================================================
+                CREATE SPACE MODAL
+            ================================================= */}
 
-            {/* ================= MODAL ================= */}
-
-            {showModal && (
+            {showCreateModal && (
 
                 <div
                     className="space-modal-overlay"
-                    onClick={closeModal}
+                    onMouseDown={(event) => {
+                        if (
+                            event.target ===
+                            event.currentTarget
+                        ) {
+                            closeCreateModal();
+                        }
+                    }}
                 >
 
-                    <div
-                        className="space-modal"
-                        onClick={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
+                    <div className="space-modal">
 
                         {/* HEADER */}
 
@@ -710,21 +468,26 @@ export default function Spaces() {
 
                             <div>
 
+                                <span className="modal-label">
+                                    ESPACE
+                                </span>
+
                                 <h2>
                                     Nouvel espace
                                 </h2>
 
                                 <p>
-                                    Créer un espace collaboratif
+                                    Créez un nouvel espace
+                                    de travail collaboratif.
                                 </p>
 
                             </div>
 
                             <button
                                 type="button"
-                                className="space-close-btn"
-                                onClick={closeModal}
-                                disabled={saving}
+                                className="modal-close-button"
+                                onClick={closeCreateModal}
+                                disabled={creating}
                             >
                                 ×
                             </button>
@@ -733,35 +496,37 @@ export default function Spaces() {
 
                         {/* ERROR */}
 
-                        {error && (
-
-                            <div className="space-form-error">
-                                {error}
+                        {createError && (
+                            <div className="create-space-error">
+                                ⚠ {createError}
                             </div>
-
                         )}
 
                         {/* FORM */}
 
                         <form
-                            onSubmit={handleSubmit}
+                            onSubmit={
+                                handleCreateSpace
+                            }
                         >
 
-                            {/* NOM */}
+                            {/* NAME */}
 
                             <div className="space-form-group">
 
                                 <label>
                                     Nom de l'espace
+                                    <span>*</span>
                                 </label>
 
                                 <input
                                     type="text"
                                     name="name"
                                     value={form.name}
-                                    onChange={handleChange}
-                                    placeholder="Ex: Service Informatique"
-                                    required
+                                    onChange={handleInput}
+                                    placeholder="Ex. Ressources Humaines"
+                                    disabled={creating}
+                                    autoFocus
                                 />
 
                             </div>
@@ -776,97 +541,49 @@ export default function Spaces() {
 
                                 <textarea
                                     name="description"
-                                    value={form.description}
-                                    onChange={handleChange}
-                                    placeholder="Description de l'espace..."
+                                    value={
+                                        form.description
+                                    }
+                                    onChange={handleInput}
+                                    placeholder="Décrivez cet espace..."
                                     rows="4"
+                                    disabled={creating}
                                 />
 
                             </div>
 
-                            {/* PROPRIETAIRE */}
+                            {/* PRIVACY */}
 
-                            <div className="space-form-group">
-
-                                <label>
-                                    Propriétaire
-                                </label>
-
-                                <select
-                                    name="owner_id"
-                                    value={form.owner_id}
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="">
-                                        Sélectionner un propriétaire
-                                    </option>
-
-                                    {users.map(
-                                        (user) => (
-
-                                            <option
-                                                key={
-                                                    user.id
-                                                }
-                                                value={
-                                                    user.id
-                                                }
-                                            >
-
-                                                {
-                                                    user.first_name
-                                                }{" "}
-                                                {
-                                                    user.last_name
-                                                }
-
-                                                {" - "}
-
-                                                {
-                                                    user.email
-                                                }
-
-                                            </option>
-
-                                        )
-                                    )}
-
-                                </select>
-
-                            </div>
-
-                            {/* PRIVÉ */}
-
-                            <div className="space-private-option">
+                            <label className="privacy-option">
 
                                 <input
-                                    id="space-private"
                                     type="checkbox"
                                     name="is_private"
                                     checked={
                                         form.is_private
                                     }
                                     onChange={
-                                        handleChange
+                                        handleInput
                                     }
+                                    disabled={creating}
                                 />
 
-                                <label htmlFor="space-private">
+                                <span className="privacy-checkbox"></span>
+
+                                <span className="privacy-content">
 
                                     <strong>
                                         Espace privé
                                     </strong>
 
                                     <small>
-                                        Seuls les membres autorisés
-                                        pourront accéder à cet espace.
+                                        Limiter l'accès aux
+                                        membres autorisés.
                                     </small>
 
-                                </label>
+                                </span>
 
-                            </div>
+                            </label>
 
                             {/* ACTIONS */}
 
@@ -874,22 +591,31 @@ export default function Spaces() {
 
                                 <button
                                     type="button"
-                                    className="space-cancel-btn"
-                                    onClick={closeModal}
-                                    disabled={saving}
+                                    className="cancel-space-button"
+                                    onClick={
+                                        closeCreateModal
+                                    }
+                                    disabled={creating}
                                 >
                                     Annuler
                                 </button>
 
                                 <button
                                     type="submit"
-                                    className="space-save-btn"
-                                    disabled={saving}
+                                    className="submit-space-button"
+                                    disabled={creating}
                                 >
 
-                                    {saving
-                                        ? "Création..."
-                                        : "Créer l'espace"}
+                                    {creating ? (
+                                        <>
+                                            <span className="button-spinner"></span>
+                                            Création...
+                                        </>
+                                    ) : (
+                                        <>
+                                            + Créer l'espace
+                                        </>
+                                    )}
 
                                 </button>
 
@@ -900,7 +626,6 @@ export default function Spaces() {
                     </div>
 
                 </div>
-
             )}
 
         </div>

@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SpaceMember extends Model
 {
     use HasFactory;
+
+    protected $table = 'space_members';
 
     protected $fillable = [
         'space_id',
@@ -16,13 +17,19 @@ class SpaceMember extends Model
         'role',
     ];
 
-    public function space(): BelongsTo
+    public function space()
     {
-        return $this->belongsTo(Space::class);
+        return $this->belongsTo(
+            Space::class,
+            'space_id'
+        );
     }
 
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
     }
 }

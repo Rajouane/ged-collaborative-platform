@@ -1,19 +1,165 @@
-import Sidebar from "./Sidebar";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import api from "../services/api";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
+
+    const navigate = useNavigate();
+
+    const [user, setUser] = useState(null);
+
+    const [stats, setStats] = useState({
+        users: 0,
+        documents: 0,
+        folders: 0,
+        spaces: 0,
+        notifications: 0,
+    });
+
+    const [loading, setLoading] = useState(true);
+
+
+    // =====================================================
+    // UTILISATEUR
+    // =====================================================
+
+    useEffect(() => {
+
+        const storedUser =
+            localStorage.getItem("user");
+
+        if (!storedUser) {
+            return;
+        }
+
+        try {
+
+            const parsedUser =
+                JSON.parse(storedUser);
+
+            setUser(parsedUser);
+
+        } catch (error) {
+
+            console.error(
+                "Erreur utilisateur :",
+                error
+            );
+
+        }
+
+    }, []);
+
+
+    // =====================================================
+    // STATISTIQUES
+    // =====================================================
+
+    useEffect(() => {
+
+        const fetchStats = async () => {
+
+            try {
+
+                setLoading(true);
+
+                const response =
+                    await api.get(
+                        "/dashboard/stats"
+                    );
+
+                const data =
+                    response.data || {};
+
+                setStats({
+
+                    users:
+                        Number(data.users) || 0,
+
+                    documents:
+                        Number(data.documents) || 0,
+
+                    folders:
+                        Number(data.folders) || 0,
+
+                    spaces:
+                        Number(data.spaces) || 0,
+
+                    notifications:
+                        Number(data.notifications) || 0,
+
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "Erreur statistiques :",
+                    error
+                );
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        fetchStats();
+
+    }, []);
+
+
+    // =====================================================
+    // NOM
+    // =====================================================
+
+    const firstName =
+        user?.first_name || "Admin";
+
+    const lastName =
+        user?.last_name || "";
+
+
+    const fullName =
+        `${firstName} ${lastName}`.trim();
+
+
+    // =====================================================
+    // INITIALS
+    // =====================================================
+
+    const initials =
+        `${firstName.charAt(0)}${lastName.charAt(0)}`
+            .toUpperCase();
+
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+
     return (
+
         <div className="admin-dashboard">
 
-            <Sidebar />
+
+            {/* =================================================
+                CONTENU
+            ================================================= */}
 
             <main className="admin-main">
 
-                {/* HEADER */}
+
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
                 <header className="admin-header">
 
                     <div>
+
                         <span className="admin-label">
                             ESPACE ADMINISTRATION
                         </span>
@@ -23,25 +169,32 @@ export default function AdminDashboard() {
                         </h1>
 
                         <p>
-                            Bienvenue dans votre espace
-                            d'administration.
+                            Bienvenue {fullName} dans votre
+                            espace d'administration.
                         </p>
+
                     </div>
+
 
                     <div className="admin-profile">
 
                         <div className="admin-avatar">
-                            A
+
+                            {initials || "A"}
+
                         </div>
 
+
                         <div>
+
                             <strong>
-                                Admin GED
+                                {fullName}
                             </strong>
 
                             <span>
                                 Administrateur
                             </span>
+
                         </div>
 
                     </div>
@@ -49,9 +202,14 @@ export default function AdminDashboard() {
                 </header>
 
 
-                {/* STATISTIQUES */}
+                {/* =================================================
+                    STATISTIQUES
+                ================================================= */}
 
                 <section className="admin-stats">
+
+
+                    {/* UTILISATEURS */}
 
                     <div className="admin-stat-card">
 
@@ -66,17 +224,21 @@ export default function AdminDashboard() {
                             </span>
 
                             <strong>
-                                25
+                                {loading
+                                    ? "..."
+                                    : stats.users}
                             </strong>
 
                             <small>
-                                utilisateurs actifs
+                                utilisateurs enregistrés
                             </small>
 
                         </div>
 
                     </div>
 
+
+                    {/* DOCUMENTS */}
 
                     <div className="admin-stat-card">
 
@@ -91,7 +253,9 @@ export default function AdminDashboard() {
                             </span>
 
                             <strong>
-                                120
+                                {loading
+                                    ? "..."
+                                    : stats.documents}
                             </strong>
 
                             <small>
@@ -102,6 +266,8 @@ export default function AdminDashboard() {
 
                     </div>
 
+
+                    {/* DOSSIERS */}
 
                     <div className="admin-stat-card">
 
@@ -116,7 +282,9 @@ export default function AdminDashboard() {
                             </span>
 
                             <strong>
-                                45
+                                {loading
+                                    ? "..."
+                                    : stats.folders}
                             </strong>
 
                             <small>
@@ -127,6 +295,8 @@ export default function AdminDashboard() {
 
                     </div>
 
+
+                    {/* ESPACES */}
 
                     <div className="admin-stat-card">
 
@@ -141,7 +311,9 @@ export default function AdminDashboard() {
                             </span>
 
                             <strong>
-                                8
+                                {loading
+                                    ? "..."
+                                    : stats.spaces}
                             </strong>
 
                             <small>
@@ -155,7 +327,9 @@ export default function AdminDashboard() {
                 </section>
 
 
-                {/* ADMINISTRATION */}
+                {/* =================================================
+                    ADMINISTRATION
+                ================================================= */}
 
                 <section className="admin-section">
 
@@ -179,6 +353,7 @@ export default function AdminDashboard() {
 
                     <div className="admin-actions">
 
+
                         {/* UTILISATEURS */}
 
                         <div className="admin-action-card">
@@ -199,9 +374,14 @@ export default function AdminDashboard() {
                                     les utilisateurs.
                                 </p>
 
-                                <a href="/users">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        navigate("/users")
+                                    }
+                                >
                                     Gérer les utilisateurs →
-                                </a>
+                                </button>
 
                             </div>
 
@@ -227,9 +407,14 @@ export default function AdminDashboard() {
                                     permissions des utilisateurs.
                                 </p>
 
-                                <a href="/users">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        navigate("/users")
+                                    }
+                                >
                                     Gérer les rôles →
-                                </a>
+                                </button>
 
                             </div>
 
@@ -255,37 +440,52 @@ export default function AdminDashboard() {
                                     collaboratifs de la plateforme.
                                 </p>
 
-                                <a href="/spaces">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        navigate("/spaces")
+                                    }
+                                >
                                     Gérer les espaces →
-                                </a>
+                                </button>
 
                             </div>
 
                         </div>
 
 
-                        {/* ACTIVITÉ */}
+                        {/* NOTIFICATIONS */}
 
                         <div className="admin-action-card">
 
                             <div className="admin-action-icon orange">
-                                📊
+                                🔔
                             </div>
 
                             <div className="admin-action-content">
 
                                 <h3>
-                                    Journal d'activité
+                                    Notifications
                                 </h3>
 
                                 <p>
-                                    Consulter les activités
-                                    récentes de la plateforme.
+                                    Vous avez{" "}
+                                    <strong>
+                                        {stats.notifications}
+                                    </strong>{" "}
+                                    notification(s) non lue(s).
                                 </p>
 
-                                <a href="/notifications">
-                                    Voir les activités →
-                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        navigate(
+                                            "/notifications"
+                                        )
+                                    }
+                                >
+                                    Voir les notifications →
+                                </button>
 
                             </div>
 
@@ -296,7 +496,9 @@ export default function AdminDashboard() {
                 </section>
 
 
-                {/* ACTIVITÉ RÉCENTE */}
+                {/* =================================================
+                    VUE RAPIDE
+                ================================================= */}
 
                 <section className="admin-section">
 
@@ -305,11 +507,11 @@ export default function AdminDashboard() {
                         <div>
 
                             <h2>
-                                Activité récente
+                                Vue rapide
                             </h2>
 
                             <p>
-                                Dernières activités de la plateforme.
+                                État actuel de la plateforme.
                             </p>
 
                         </div>
@@ -319,30 +521,36 @@ export default function AdminDashboard() {
 
                     <div className="admin-activity">
 
+
+                        {/* USERS */}
+
                         <div className="admin-activity-item">
 
                             <div className="activity-avatar blue">
-                                👤
+                                👥
                             </div>
 
                             <div className="activity-info">
 
                                 <strong>
-                                    Nouvel utilisateur
+                                    Utilisateurs
                                 </strong>
 
                                 <span>
-                                    Un nouvel utilisateur a été ajouté.
+                                    {stats.users} utilisateurs
+                                    enregistrés.
                                 </span>
 
                             </div>
 
                             <time>
-                                Aujourd'hui
+                                Maintenant
                             </time>
 
                         </div>
 
+
+                        {/* DOCUMENTS */}
 
                         <div className="admin-activity-item">
 
@@ -353,21 +561,24 @@ export default function AdminDashboard() {
                             <div className="activity-info">
 
                                 <strong>
-                                    Nouveau document
+                                    Documents
                                 </strong>
 
                                 <span>
-                                    Un nouveau document a été ajouté.
+                                    {stats.documents} documents
+                                    enregistrés.
                                 </span>
 
                             </div>
 
                             <time>
-                                Aujourd'hui
+                                Maintenant
                             </time>
 
                         </div>
 
+
+                        {/* SPACES */}
 
                         <div className="admin-activity-item">
 
@@ -378,17 +589,18 @@ export default function AdminDashboard() {
                             <div className="activity-info">
 
                                 <strong>
-                                    Nouvel espace
+                                    Espaces
                                 </strong>
 
                                 <span>
-                                    Un espace collaboratif a été créé.
+                                    {stats.spaces} espaces
+                                    collaboratifs.
                                 </span>
 
                             </div>
 
                             <time>
-                                Hier
+                                Maintenant
                             </time>
 
                         </div>

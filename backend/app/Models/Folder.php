@@ -13,31 +13,49 @@ class Folder extends Model
 
     protected $fillable = [
         'name',
-        'parent_id',
+        'description',
+        'space_id',
         'user_id',
+        'parent_id',
     ];
 
-    // Dossier parent
-    public function parent(): BelongsTo
+    public function space(): BelongsTo
     {
-        return $this->belongsTo(Folder::class, 'parent_id');
+        return $this->belongsTo(
+            Space::class,
+            'space_id'
+        );
     }
 
-    // Sous-dossiers
-    public function children(): HasMany
-    {
-        return $this->hasMany(Folder::class, 'parent_id');
-    }
-
-    // Propriétaire du dossier
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
     }
 
-    // Documents contenus dans le dossier
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(
+            Folder::class,
+            'parent_id'
+        );
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(
+            Folder::class,
+            'parent_id'
+        );
+    }
+
     public function documents(): HasMany
     {
-        return $this->hasMany(Document::class);
+        return $this->hasMany(
+            Document::class,
+            'folder_id'
+        );
     }
 }

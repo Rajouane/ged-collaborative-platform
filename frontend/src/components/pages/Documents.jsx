@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Documents.css";
 import Sidebar from "./Sidebar.jsx";
+
 export default function Documents() {
+    const navigate = useNavigate();
+
     const [documents, setDocuments] = useState([]);
     const [folders, setFolders] = useState([]);
+    const [spaces, setSpaces] = useState([]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -19,13 +24,21 @@ export default function Documents() {
         title: "",
         description: "",
         folder_id: "",
+        space_id: "",
         file: null,
     });
 
     useEffect(() => {
         loadDocuments();
         loadFolders();
+        loadSpaces();
     }, []);
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOCUMENTS
+    |--------------------------------------------------------------------------
+    */
 
     const loadDocuments = async () => {
         try {
@@ -55,6 +68,12 @@ export default function Documents() {
         }
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | FOLDERS
+    |--------------------------------------------------------------------------
+    */
+
     const loadFolders = async () => {
         try {
             const response = await api.get("/folders");
@@ -73,11 +92,44 @@ export default function Documents() {
         }
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | SPACES
+    |--------------------------------------------------------------------------
+    */
+
+    const loadSpaces = async () => {
+        try {
+            const response = await api.get("/spaces");
+
+            const data = response.data;
+
+            if (Array.isArray(data)) {
+                setSpaces(data);
+            } else if (Array.isArray(data?.data)) {
+                setSpaces(data.data);
+            } else {
+                setSpaces([]);
+            }
+        } catch (err) {
+            console.error("Erreur espaces :", err);
+
+            setSpaces([]);
+        }
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPEN CREATE MODAL
+    |--------------------------------------------------------------------------
+    */
+
     const openCreateModal = () => {
         setFormData({
             title: "",
             description: "",
             folder_id: "",
+            space_id: "",
             file: null,
         });
 
@@ -85,8 +137,16 @@ export default function Documents() {
         setShowCreateModal(true);
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | CLOSE CREATE MODAL
+    |--------------------------------------------------------------------------
+    */
+
     const closeCreateModal = () => {
-        if (creating) return;
+        if (creating) {
+            return;
+        }
 
         setShowCreateModal(false);
 
@@ -94,20 +154,39 @@ export default function Documents() {
             title: "",
             description: "",
             folder_id: "",
+            space_id: "",
             file: null,
         });
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | FORM CHANGE
+    |--------------------------------------------------------------------------
+    */
+
     const handleChange = (e) => {
-        const { name, value, files } = e.target;
+        const {
+            name,
+            value,
+            files,
+        } = e.target;
 
         setFormData((previous) => ({
             ...previous,
-            [name]: name === "file"
-                ? files?.[0] || null
-                : value,
+
+            [name]:
+                name === "file"
+                    ? files?.[0] || null
+                    : value,
         }));
     };
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE DOCUMENT
+    |--------------------------------------------------------------------------
+    */
 
     const handleCreateDocument = async (e) => {
         e.preventDefault();
@@ -115,12 +194,18 @@ export default function Documents() {
         setError("");
 
         if (!formData.title.trim()) {
-            setError("Le titre du document est obligatoire.");
+            setError(
+                "Le titre du document est obligatoire."
+            );
+
             return;
         }
 
         if (!formData.file) {
-            setError("Veuillez sélectionner un fichier.");
+            setError(
+                "Veuillez sélectionner un fichier."
+            );
+
             return;
         }
 
@@ -129,29 +214,59 @@ export default function Documents() {
 
             const data = new FormData();
 
-            data.append("title", formData.title);
-            data.append("description", formData.description);
+            data.append(
+                "title",
+                formData.title
+            );
+
+            data.append(
+                "description",
+                formData.description
+            );
 
             if (formData.folder_id) {
-                data.append("folder_id", formData.folder_id);
+                data.append(
+                    "folder_id",
+                    formData.folder_id
+                );
             }
 
-            data.append("file", formData.file);
+            if (formData.space_id) {
+                data.append(
+                    "space_id",
+                    formData.space_id
+                );
+            }
 
-            await api.post("/documents", data, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            data.append(
+                "file",
+                formData.file
+            );
+
+            await api.post(
+                "/documents",
+                data,
+                {
+                    headers: {
+                        "Content-Type":
+                            "multipart/form-data",
+                    },
+                }
+            );
 
             closeCreateModal();
 
             await loadDocuments();
+
         } catch (err) {
-            console.error("Erreur création document :", err);
+            console.error(
+                "Erreur création document :",
+                err
+            );
 
             if (err.response?.data?.errors) {
-                const errors = err.response.data.errors;
+                const errors =
+                    err.response.data.errors;
 
                 const firstError =
                     Object.values(errors)[0]?.[0];
@@ -171,32 +286,71 @@ export default function Documents() {
         }
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW DOCUMENT
+    |--------------------------------------------------------------------------
+    */
+
+    const handleView = (id) => {
+        if (!id) {
+            setError(
+                "Impossible d'ouvrir ce document."
+            );
+
+            return;
+        }
+
+        navigate(`/documents/${id}`);
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE DOCUMENT
+    |--------------------------------------------------------------------------
+    */
+
     const handleDelete = async (id) => {
         const confirmed = window.confirm(
             "Voulez-vous vraiment supprimer ce document ?"
         );
 
-        if (!confirmed) return;
+        if (!confirmed) {
+            return;
+        }
 
         try {
             setError("");
 
-            await api.delete(`/documents/${id}`);
+            await api.delete(
+                `/documents/${id}`
+            );
 
             setDocuments((previous) =>
                 previous.filter(
-                    (document) => document.id !== id
+                    (document) =>
+                        document.id !== id
                 )
             );
+
         } catch (err) {
-            console.error("Erreur suppression :", err);
+            console.error(
+                "Erreur suppression :",
+                err
+            );
 
             setError(
                 err.response?.data?.message ||
-                "Impossible de supprimer le document."
+                "Impossible de supprimer ce document."
             );
         }
     };
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILE ICON
+    |--------------------------------------------------------------------------
+    */
 
     const getFileIcon = (document) => {
         const type = (
@@ -257,6 +411,12 @@ export default function Documents() {
         return "📄";
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | FILE TYPE
+    |--------------------------------------------------------------------------
+    */
+
     const getFileType = (document) => {
         const type = (
             document.file_type ||
@@ -308,10 +468,24 @@ export default function Documents() {
         return "FICHIER";
     };
 
-    const formatDate = (date) => {
-        if (!date) return "-";
+    /*
+    |--------------------------------------------------------------------------
+    | DATE
+    |--------------------------------------------------------------------------
+    */
 
-        return new Date(date).toLocaleDateString(
+    const formatDate = (date) => {
+        if (!date) {
+            return "-";
+        }
+
+        const value = new Date(date);
+
+        if (Number.isNaN(value.getTime())) {
+            return "-";
+        }
+
+        return value.toLocaleDateString(
             "fr-FR",
             {
                 day: "2-digit",
@@ -321,8 +495,16 @@ export default function Documents() {
         );
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | SIZE
+    |--------------------------------------------------------------------------
+    */
+
     const formatSize = (size) => {
-        if (!size) return "-";
+        if (!size) {
+            return "-";
+        }
 
         const bytes = Number(size);
 
@@ -334,11 +516,19 @@ export default function Documents() {
             return `${bytes} B`;
         }
 
-        if (bytes < 1024 * 1024) {
-            return `${(bytes / 1024).toFixed(1)} KB`;
+        if (
+            bytes <
+            1024 * 1024
+        ) {
+            return `${(
+                bytes / 1024
+            ).toFixed(1)} KB`;
         }
 
-        if (bytes < 1024 * 1024 * 1024) {
+        if (
+            bytes <
+            1024 * 1024 * 1024
+        ) {
             return `${(
                 bytes /
                 (1024 * 1024)
@@ -351,346 +541,566 @@ export default function Documents() {
         ).toFixed(1)} GB`;
     };
 
-    const filteredDocuments = documents.filter(
-        (document) => {
-            const search =
-                searchTerm.toLowerCase().trim();
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER
+    |--------------------------------------------------------------------------
+    */
 
-            const title =
-                document.title || "";
+    const filteredDocuments =
+        documents.filter(
+            (document) => {
 
-            const description =
-                document.description || "";
+                const search =
+                    searchTerm
+                        .toLowerCase()
+                        .trim();
 
-            const folderName =
-                document.folder?.name ||
-                document.folder_name ||
-                "";
+                const title =
+                    document.title || "";
 
-            const fileName =
-                document.file_name ||
-                document.filename ||
-                "";
+                const description =
+                    document.description || "";
 
-            const fileType = (
-                document.file_type ||
-                document.mime_type ||
-                ""
-            ).toLowerCase();
+                const folderName =
+                    document.folder?.name ||
+                    document.folder_name ||
+                    "";
 
-            const matchesSearch =
-                !search ||
-                title.toLowerCase().includes(search) ||
-                description
-                    .toLowerCase()
-                    .includes(search) ||
-                folderName
-                    .toLowerCase()
-                    .includes(search) ||
-                fileName
-                    .toLowerCase()
-                    .includes(search);
+                const spaceName =
+                    document.space?.name ||
+                    document.space_name ||
+                    "";
 
-            const matchesType =
-                typeFilter === "all" ||
-                fileType.includes(
-                    typeFilter.toLowerCase()
-                ) ||
-                (
-                    typeFilter === "word" &&
+                const fileName =
+                    document.file_name ||
+                    document.filename ||
+                    "";
+
+                const fileType = (
+                    document.file_type ||
+                    document.mime_type ||
+                    ""
+                ).toLowerCase();
+
+                const text = `
+                    ${title}
+                    ${description}
+                    ${folderName}
+                    ${spaceName}
+                    ${fileName}
+                `.toLowerCase();
+
+                const matchesSearch =
+                    !search ||
+                    text.includes(search);
+
+                const matchesType =
+                    typeFilter === "all" ||
+                    fileType.includes(
+                        typeFilter.toLowerCase()
+                    ) ||
                     (
-                        fileName.endsWith(".doc") ||
-                        fileName.endsWith(".docx")
-                    )
-                ) ||
-                (
-                    typeFilter === "excel" &&
+                        typeFilter === "word" &&
+                        (
+                            fileName
+                                .toLowerCase()
+                                .endsWith(".doc") ||
+                            fileName
+                                .toLowerCase()
+                                .endsWith(".docx")
+                        )
+                    ) ||
                     (
-                        fileName.endsWith(".xls") ||
-                        fileName.endsWith(".xlsx")
-                    )
+                        typeFilter === "excel" &&
+                        (
+                            fileName
+                                .toLowerCase()
+                                .endsWith(".xls") ||
+                            fileName
+                                .toLowerCase()
+                                .endsWith(".xlsx")
+                        )
+                    );
+
+                return (
+                    matchesSearch &&
+                    matchesType
                 );
-
-            return (
-                matchesSearch &&
-                matchesType
-            );
-        }
-    );
+            }
+        );
 
     return (
-        <main className="documents-main">
+        <div className="dashboard-layout">
 
-            <header className="documents-header">
+            <Sidebar />
 
-                <div>
-                    <h1>Documents</h1>
+            <main className="documents-main">
 
-                    <p>
-                        Gérez et organisez vos documents
-                        facilement.
-                    </p>
-                </div>
+                {/* =====================================================
+                    HEADER
+                ===================================================== */}
 
-                <div className="documents-tools">
+                <header className="documents-header">
 
-                    <div className="document-search">
-                        <span>🔍</span>
+                    <div>
 
-                        <input
-                            type="text"
-                            placeholder="Rechercher un document..."
-                            value={searchTerm}
+                        <h1>
+                            Documents
+                        </h1>
+
+                        <p>
+                            Gérez et organisez
+                            vos documents facilement.
+                        </p>
+
+                    </div>
+
+                    <div className="documents-tools">
+
+                        <div className="document-search">
+
+                            <span>
+                                🔍
+                            </span>
+
+                            <input
+                                type="text"
+                                placeholder="Rechercher un document..."
+                                value={searchTerm}
+                                onChange={(e) =>
+                                    setSearchTerm(
+                                        e.target.value
+                                    )
+                                }
+                            />
+
+                        </div>
+
+                        <select
+                            className="document-filter"
+                            value={typeFilter}
                             onChange={(e) =>
-                                setSearchTerm(e.target.value)
+                                setTypeFilter(
+                                    e.target.value
+                                )
                             }
-                        />
+                        >
+
+                            <option value="all">
+                                Tous les types
+                            </option>
+
+                            <option value="pdf">
+                                PDF
+                            </option>
+
+                            <option value="word">
+                                Word
+                            </option>
+
+                            <option value="excel">
+                                Excel
+                            </option>
+
+                            <option value="image">
+                                Images
+                            </option>
+
+                        </select>
+
+                        <button
+                            type="button"
+                            className="add-document-button"
+                            onClick={
+                                openCreateModal
+                            }
+                        >
+                            + Nouveau document
+                        </button>
+
                     </div>
 
-                    <select
-                        className="document-filter"
-                        value={typeFilter}
-                        onChange={(e) =>
-                            setTypeFilter(e.target.value)
-                        }
-                    >
-                        <option value="all">
-                            Tous les types
-                        </option>
+                </header>
 
-                        <option value="pdf">
-                            PDF
-                        </option>
+                {/* =====================================================
+                    CONTENT
+                ===================================================== */}
 
-                        <option value="word">
-                            Word
-                        </option>
+                <section className="documents-content">
 
-                        <option value="excel">
-                            Excel
-                        </option>
-
-                        <option value="image">
-                            Images
-                        </option>
-                    </select>
-
-                    <button
-                        type="button"
-                        className="add-document-button"
-                        onClick={openCreateModal}
-                    >
-                        + Nouveau document
-                    </button>
-
-                </div>
-
-            </header>
-
-            <section className="documents-content">
-
-                {error && (
-                    <div className="documents-error">
-                        {error}
-                    </div>
-                )}
-
-                <div className="documents-stats">
-
-                    <div className="document-stat-card">
-                        <div className="document-stat-icon">
-                            📄
+                    {error && (
+                        <div className="documents-error">
+                            {error}
                         </div>
+                    )}
 
-                        <div className="document-stat-info">
-                            <span>Total documents</span>
-                            <strong>
-                                {documents.length}
-                            </strong>
-                        </div>
-                    </div>
+                    {/* =================================================
+                        STATS
+                    ================================================= */}
 
-                    <div className="document-stat-card">
-                        <div className="document-stat-icon">
-                            📁
-                        </div>
+                    <div className="documents-stats">
 
-                        <div className="document-stat-info">
-                            <span>Dossiers</span>
-                            <strong>
-                                {folders.length}
-                            </strong>
-                        </div>
-                    </div>
+                        <div className="document-stat-card">
 
-                    <div className="document-stat-card">
-                        <div className="document-stat-icon">
-                            🔎
-                        </div>
-
-                        <div className="document-stat-info">
-                            <span>Résultats</span>
-                            <strong>
-                                {filteredDocuments.length}
-                            </strong>
-                        </div>
-                    </div>
-
-                </div>
-
-                {loading && (
-                    <div className="documents-message">
-                        Chargement des documents...
-                    </div>
-                )}
-
-                {!loading &&
-                    filteredDocuments.length === 0 && (
-                        <div className="empty-documents">
-
-                            <div className="empty-document-icon">
+                            <div className="document-stat-icon">
                                 📄
                             </div>
 
-                            <h2>
-                                {searchTerm
-                                    ? "Aucun document trouvé"
-                                    : "Aucun document"}
-                            </h2>
+                            <div className="document-stat-info">
 
-                            <p>
-                                {searchTerm
-                                    ? "Essayez avec un autre terme de recherche."
-                                    : "Vous n'avez pas encore de document."}
-                            </p>
+                                <span>
+                                    Total documents
+                                </span>
 
+                                <strong>
+                                    {documents.length}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                        <div className="document-stat-card">
+
+                            <div className="document-stat-icon">
+                                📁
+                            </div>
+
+                            <div className="document-stat-info">
+
+                                <span>
+                                    Dossiers
+                                </span>
+
+                                <strong>
+                                    {folders.length}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                        <div className="document-stat-card">
+
+                            <div className="document-stat-icon">
+                                🏢
+                            </div>
+
+                            <div className="document-stat-info">
+
+                                <span>
+                                    Espaces
+                                </span>
+
+                                <strong>
+                                    {spaces.length}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                        <div className="document-stat-card">
+
+                            <div className="document-stat-icon">
+                                🔎
+                            </div>
+
+                            <div className="document-stat-info">
+
+                                <span>
+                                    Résultats
+                                </span>
+
+                                <strong>
+                                    {
+                                        filteredDocuments.length
+                                    }
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {/* =================================================
+                        LOADING
+                    ================================================= */}
+
+                    {loading && (
+                        <div className="documents-message">
+                            Chargement des documents...
                         </div>
                     )}
 
-                {!loading &&
-                    filteredDocuments.length > 0 && (
-                        <div className="documents-table-wrapper">
+                    {/* =================================================
+                        EMPTY
+                    ================================================= */}
 
-                            <table className="documents-table">
+                    {!loading &&
+                        filteredDocuments.length === 0 && (
 
-                                <thead>
-                                    <tr>
-                                        <th>DOCUMENT</th>
-                                        <th>TYPE</th>
-                                        <th>DOSSIER</th>
-                                        <th>TAILLE</th>
-                                        <th>DATE</th>
-                                        <th>ACTIONS</th>
-                                    </tr>
-                                </thead>
+                            <div className="empty-documents">
 
-                                <tbody>
+                                <div className="empty-document-icon">
+                                    📄
+                                </div>
 
-                                    {filteredDocuments.map(
-                                        (document) => (
-                                            <tr
-                                                key={document.id}
-                                            >
+                                <h2>
+                                    {searchTerm
+                                        ? "Aucun document trouvé"
+                                        : "Aucun document"
+                                    }
+                                </h2>
 
-                                                <td>
-                                                    <div className="document-name">
+                                <p>
+                                    {searchTerm
+                                        ? "Essayez avec un autre terme de recherche."
+                                        : "Vous n'avez pas encore de document."
+                                    }
+                                </p>
 
-                                                        <span>
-                                                            {getFileIcon(
-                                                                document
-                                                            )}
-                                                        </span>
+                            </div>
 
-                                                        <strong>
-                                                            {
-                                                                document.title
-                                                            }
-                                                        </strong>
+                        )}
 
-                                                    </div>
-                                                </td>
+                    {/* =================================================
+                        TABLE
+                    ================================================= */}
 
-                                                <td>
-                                                    <span className="document-type">
-                                                        {getFileType(
-                                                            document
-                                                        )}
-                                                    </span>
-                                                </td>
+                    {!loading &&
+                        filteredDocuments.length > 0 && (
 
-                                                <td>
-                                                    {
-                                                        document.folder?.name ||
-                                                        document.folder_name ||
-                                                        "Aucun dossier"
+                            <div className="documents-table-wrapper">
+
+                                <table className="documents-table">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                DOCUMENT
+                                            </th>
+
+                                            <th>
+                                                TYPE
+                                            </th>
+
+                                            <th>
+                                                ESPACE
+                                            </th>
+
+                                            <th>
+                                                DOSSIER
+                                            </th>
+
+                                            <th>
+                                                AUTEUR
+                                            </th>
+
+                                            <th>
+                                                TAILLE
+                                            </th>
+
+                                            <th>
+                                                DATE
+                                            </th>
+
+                                            <th>
+                                                ACTIONS
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        {filteredDocuments.map(
+                                            (document) => (
+
+                                                <tr
+                                                    key={
+                                                        document.id
                                                     }
-                                                </td>
+                                                >
 
-                                                <td>
-                                                    {formatSize(
-                                                        document.file_size ||
-                                                        document.size
-                                                    )}
-                                                </td>
+                                                    {/* DOCUMENT */}
 
-                                                <td>
-                                                    {formatDate(
-                                                        document.created_at
-                                                    )}
-                                                </td>
+                                                    <td>
 
-                                                <td>
-                                                    <div className="document-actions">
+                                                        <div className="document-name">
 
-                                                        <button
-                                                            type="button"
-                                                            className="document-action-button"
-                                                            onClick={() =>
-                                                                console.log(
+                                                            <span>
+                                                                {
+                                                                    getFileIcon(
+                                                                        document
+                                                                    )
+                                                                }
+                                                            </span>
+
+                                                            <strong>
+                                                                {
+                                                                    document.title ||
+                                                                    "Sans titre"
+                                                                }
+                                                            </strong>
+
+                                                        </div>
+
+                                                    </td>
+
+                                                    {/* TYPE */}
+
+                                                    <td>
+
+                                                        <span className="document-type">
+
+                                                            {
+                                                                getFileType(
                                                                     document
                                                                 )
                                                             }
-                                                        >
-                                                            Voir
-                                                        </button>
 
-                                                        <button
-                                                            type="button"
-                                                            className="document-delete-button"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    document.id
-                                                                )
-                                                            }
-                                                        >
-                                                            Supprimer
-                                                        </button>
+                                                        </span>
 
-                                                    </div>
-                                                </td>
+                                                    </td>
 
-                                            </tr>
-                                        )
-                                    )}
+                                                    {/* ESPACE */}
 
-                                </tbody>
+                                                    <td>
 
-                            </table>
+                                                        {
+                                                            document.space?.name ||
+                                                            document.space_name ||
+                                                            "Aucun espace"
+                                                        }
 
-                        </div>
-                    )}
+                                                    </td>
 
-            </section>
+                                                    {/* DOSSIER */}
+
+                                                    <td>
+
+                                                        {
+                                                            document.folder?.name ||
+                                                            document.folder_name ||
+                                                            "Aucun dossier"
+                                                        }
+
+                                                    </td>
+
+                                                    {/* AUTEUR */}
+
+                                                    <td>
+
+                                                        {
+                                                            document.user
+                                                                ? `${document.user.first_name || ""} ${document.user.last_name || ""}`.trim() ||
+                                                                  document.user.name ||
+                                                                  document.user.email ||
+                                                                  "Inconnu"
+                                                                : "Inconnu"
+                                                        }
+
+                                                    </td>
+
+                                                    {/* SIZE */}
+
+                                                    <td>
+
+                                                        {
+                                                            formatSize(
+                                                                document.file_size ||
+                                                                document.size
+                                                            )
+                                                        }
+
+                                                    </td>
+
+                                                    {/* DATE */}
+
+                                                    <td>
+
+                                                        {
+                                                            formatDate(
+                                                                document.created_at
+                                                            )
+                                                        }
+
+                                                    </td>
+
+                                                    {/* ACTIONS */}
+
+                                                    <td>
+
+                                                        <div className="document-actions">
+
+                                                            <button
+                                                                type="button"
+                                                                className="document-action-button"
+                                                                onClick={() =>
+                                                                    handleView(
+                                                                        document.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                Voir
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="document-delete-button"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        document.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                Supprimer
+                                                            </button>
+
+                                                        </div>
+
+                                                    </td>
+
+                                                </tr>
+
+                                            )
+                                        )}
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        )}
+
+                </section>
+
+            </main>
+
+            {/* =========================================================
+                CREATE DOCUMENT MODAL
+            ========================================================= */}
 
             {showCreateModal && (
+
                 <div
                     className="modal-overlay"
                     onMouseDown={(e) => {
+
                         if (
-                            e.target === e.currentTarget
+                            e.target ===
+                            e.currentTarget
                         ) {
                             closeCreateModal();
                         }
+
                     }}
                 >
 
@@ -699,20 +1109,25 @@ export default function Documents() {
                         <div className="modal-header">
 
                             <div>
+
                                 <h2>
                                     Nouveau document
                                 </h2>
 
                                 <p className="modal-subtitle">
-                                    Ajoutez un nouveau document
-                                    à votre espace.
+                                    Ajoutez un document
+                                    à un espace collaboratif.
                                 </p>
+
                             </div>
 
                             <button
                                 type="button"
                                 className="modal-close"
-                                onClick={closeCreateModal}
+                                onClick={
+                                    closeCreateModal
+                                }
+                                disabled={creating}
                             >
                                 ×
                             </button>
@@ -725,6 +1140,8 @@ export default function Documents() {
                             }
                         >
 
+                            {/* TITLE */}
+
                             <div className="form-group">
 
                                 <label htmlFor="title">
@@ -735,13 +1152,19 @@ export default function Documents() {
                                     id="title"
                                     name="title"
                                     type="text"
-                                    value={formData.title}
-                                    onChange={handleChange}
+                                    value={
+                                        formData.title
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Ex : Contrat de travail"
                                     required
                                 />
 
                             </div>
+
+                            {/* DESCRIPTION */}
 
                             <div className="form-group">
 
@@ -755,11 +1178,68 @@ export default function Documents() {
                                     value={
                                         formData.description
                                     }
-                                    onChange={handleChange}
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Description du document..."
                                 />
 
                             </div>
+
+                            {/* SPACE */}
+
+                            <div className="form-group">
+
+                                <label htmlFor="space_id">
+                                    Espace collaboratif
+                                </label>
+
+                                <select
+                                    id="space_id"
+                                    name="space_id"
+                                    value={
+                                        formData.space_id
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
+                                >
+
+                                    <option value="">
+                                        Aucun espace
+                                    </option>
+
+                                    {spaces.map(
+                                        (space) => (
+
+                                            <option
+                                                key={
+                                                    space.id
+                                                }
+                                                value={
+                                                    space.id
+                                                }
+                                            >
+
+                                                {space.name}
+
+                                                {" — "}
+
+                                                {space.is_private
+                                                    ? "Privé"
+                                                    : "Public"
+                                                }
+
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+                            {/* FOLDER */}
 
                             <div className="form-group">
 
@@ -773,7 +1253,9 @@ export default function Documents() {
                                     value={
                                         formData.folder_id
                                     }
-                                    onChange={handleChange}
+                                    onChange={
+                                        handleChange
+                                    }
                                 >
 
                                     <option value="">
@@ -782,18 +1264,28 @@ export default function Documents() {
 
                                     {folders.map(
                                         (folder) => (
+
                                             <option
-                                                key={folder.id}
-                                                value={folder.id}
+                                                key={
+                                                    folder.id
+                                                }
+                                                value={
+                                                    folder.id
+                                                }
                                             >
+
                                                 {folder.name}
+
                                             </option>
+
                                         )
                                     )}
 
                                 </select>
 
                             </div>
+
+                            {/* FILE */}
 
                             <div className="form-group">
 
@@ -805,7 +1297,9 @@ export default function Documents() {
                                     id="file"
                                     name="file"
                                     type="file"
-                                    onChange={handleChange}
+                                    onChange={
+                                        handleChange
+                                    }
                                     required
                                 />
 
@@ -819,12 +1313,16 @@ export default function Documents() {
 
                             </div>
 
+                            {/* ACTIONS */}
+
                             <div className="modal-actions">
 
                                 <button
                                     type="button"
                                     className="cancel-button"
-                                    onClick={closeCreateModal}
+                                    onClick={
+                                        closeCreateModal
+                                    }
                                     disabled={creating}
                                 >
                                     Annuler
@@ -835,9 +1333,12 @@ export default function Documents() {
                                     className="create-button"
                                     disabled={creating}
                                 >
+
                                     {creating
                                         ? "Création..."
-                                        : "Créer le document"}
+                                        : "Créer le document"
+                                    }
+
                                 </button>
 
                             </div>
@@ -847,8 +1348,9 @@ export default function Documents() {
                     </div>
 
                 </div>
+
             )}
 
-        </main>
+        </div>
     );
 }

@@ -10,113 +10,119 @@ class NotificationController extends Controller
 {
     /**
      * GET /api/notifications
-     *
-     * Récupérer les notifications de l'utilisateur connecté.
      */
     public function index(Request $request)
     {
-        $notifications = Notification::where('user_id', $request->user()->id)
-            ->latest()
+        $notifications = Notification::where(
+                'user_id',
+                $request->user()->id
+            )
+            ->orderByDesc('created_at')
             ->get();
 
-        return response()->json($notifications);
-    }
-
-    /**
-     * POST /api/notifications
-     *
-     * Créer une notification.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-        ]);
-
-        $notification = Notification::create([
-            'user_id' => $validated['user_id'],
-            'title' => $validated['title'],
-            'message' => $validated['message'],
-            'is_read' => false,
-        ]);
-
         return response()->json([
-            'message' => 'Notification créée avec succès.',
-            'notification' => $notification,
-        ], 201);
+            'data' => $notifications
+        ]);
     }
 
-    /**
-     * GET /api/notifications/{id}
-     *
-     * Afficher une notification.
-     */
-    public function show(Request $request, string $id)
-    {
-        $notification = Notification::where('user_id', $request->user()->id)
-            ->findOrFail($id);
-
-        return response()->json($notification);
-    }
 
     /**
-     * PUT /api/notifications/{id}
-     *
-     * Marquer une notification comme lue.
+     * PUT /api/notifications/{notification}
      */
-    public function update(Request $request, string $id)
-    {
-        $notification = Notification::where(
-            'user_id',
+    public function update(
+        Request $request,
+        Notification $notification
+    ) {
+        if (
+            $notification->user_id !=
             $request->user()->id
-        )->findOrFail($id);
+        ) {
+            return response()->json([
+                'message' => 'Accès refusé.'
+            ], 403);
+        }
 
         $notification->update([
-            'is_read' => true,
+            'is_read' => true
         ]);
 
         return response()->json([
             'message' => 'Notification marquée comme lue.',
-            'notification' => $notification,
+            'data' => $notification
         ]);
     }
 
+
     /**
-     * DELETE /api/notifications/{id}
-     *
-     * Supprimer une notification.
+     * PUT /api/notifications/read-all
      */
-    public function destroy(Request $request, string $id)
+    public function markAllAsRead(Request $request)
     {
-        $notification = Notification::where(
+        Notification::where(
             'user_id',
             $request->user()->id
-        )->findOrFail($id);
+        )->update([
+            'is_read' => true
+        ]);
+
+        return response()->json([
+            'message' => 'Toutes les notifications sont marquées comme lues.'
+        ]);
+    }
+
+
+    /**
+     * GET /api/notifications/{notification}
+     */
+    public function show(
+        Request $request,
+        Notification $notification
+    ) {
+        if (
+            $notification->user_id !=
+            $request->user()->id
+        ) {
+            return response()->json([
+                'message' => 'Accès refusé.'
+            ], 403);
+        }
+
+        return response()->json([
+            'data' => $notification
+        ]);
+    }
+
+
+    /**
+     * DELETE /api/notifications/{notification}
+     */
+    public function destroy(
+        Request $request,
+        Notification $notification
+    ) {
+        if (
+            $notification->user_id !=
+            $request->user()->id
+        ) {
+            return response()->json([
+                'message' => 'Accès refusé.'
+            ], 403);
+        }
 
         $notification->delete();
 
         return response()->json([
-            'message' => 'Notification supprimée avec succès.',
+            'message' => 'Notification supprimée.'
         ]);
     }
 
     /**
-     * PUT /api/notifications/read-all
-     *
-     * Marquer toutes les notifications comme lues.
+     * POST non utilisé.
      */
-    public function markAllAsRead(Request $request)
+    public function store(Request $request)
     {
-        Notification::where('user_id', $request->user()->id)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-            ]);
-
         return response()->json([
-            'message' => 'Toutes les notifications ont été marquées comme lues.',
-        ]);
+            'message' => 'Création directe des notifications interdite.'
+        ], 405);
     }
 }

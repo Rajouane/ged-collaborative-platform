@@ -1,130 +1,111 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
-import Sidebar from "./Sidebar";
 import "./Notifications.css";
 
 export default function Notifications() {
     const [notifications, setNotifications] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // ==========================================
-    // RÉCUPÉRER LES NOTIFICATIONS
-    // ==========================================
+    const [markingId, setMarkingId] = useState(null);
+    const [markingAll, setMarkingAll] = useState(false);
 
-    const fetchNotifications = async () => {
+    // =========================================================
+    // LOAD NOTIFICATIONS
+    // =========================================================
+
+    const loadNotifications = useCallback(async () => {
         try {
-            setLoading(true);
             setError("");
 
-            const response = await api.get("/notifications");
+            const response =
+                await api.get("/notifications");
 
-            console.log("Status notifications :", response.status);
-            console.log("Notifications Laravel :", response.data);
+            const data = response.data;
 
-            // Laravel doit normalement retourner un tableau
-            if (Array.isArray(response.data)) {
-                setNotifications(response.data);
-            } else {
-                // Protection si Laravel retourne :
-                // { notifications: [...] }
-                if (Array.isArray(response.data.notifications)) {
-                    setNotifications(response.data.notifications);
-                } else {
-                    setNotifications([]);
-                }
-            }
+            const result = Array.isArray(data)
+                ? data
+                : Array.isArray(data?.data)
+                    ? data.data
+                    : [];
 
+            setNotifications(result);
         } catch (err) {
             console.error(
-                "Erreur récupération notifications :",
+                "Erreur notifications:",
                 err
             );
 
-            console.error(
-                "Status :",
-                err.response?.status
+            setError(
+                err.response?.data?.message ||
+                "Impossible de charger les notifications."
             );
-
-            console.error(
-                "Réponse Laravel :",
-                err.response?.data
-            );
-
-            if (err.response?.status === 401) {
-                setError(
-                    "Votre session a expiré. Veuillez vous reconnecter."
-                );
-            } else if (err.response?.status === 404) {
-                setError(
-                    "La route des notifications est introuvable."
-                );
-            } else if (err.response?.status === 500) {
-                setError(
-                    "Erreur interne du serveur Laravel."
-                );
-            } else {
-                setError(
-                    err.response?.data?.message ||
-                    "Impossible de récupérer les notifications."
-                );
-            }
-
         } finally {
             setLoading(false);
         }
-    };
-
-    // ==========================================
-    // CHARGEMENT INITIAL
-    // ==========================================
-
-    useEffect(() => {
-        fetchNotifications();
     }, []);
 
-    // ==========================================
-    // COMPTER LES NOTIFICATIONS NON LUES
-    // ==========================================
+    // =========================================================
+    // INITIAL LOAD + REFRESH
+    // =========================================================
 
-    const unreadCount = notifications.filter(
-        (notification) =>
-            notification.is_read === false ||
-            notification.is_read === 0
-    ).length;
+    useEffect(() => {
+        loadNotifications();
 
-    // ==========================================
-    // MARQUER UNE NOTIFICATION COMME LUE
-    // ==========================================
+        const interval = setInterval(
+            loadNotifications,
+            10000
+        );
 
-    const markAsRead = async (id) => {
+        return () => {
+            clearInterval(interval);
+        };
+    }, [loadNotifications]);
+
+    // =========================================================
+    // UNREAD COUNT
+    // =========================================================
+
+    const unreadCount = useMemo(() => {
+        return notifications.filter(
+            (notification) =>
+                !notification.is_read
+        ).length;
+    }, [notifications]);
+
+    // =========================================================
+    // MARK ONE AS READ
+    // =========================================================
+
+    const markAsRead = async (notification) => {
+        if (
+            !notification ||
+            notification.is_read
+        ) {
+            return;
+        }
+
         try {
-            setError("");
+            setMarkingId(notification.id);
 
-            const response = await api.put(
-                `/notifications/${id}`
+            await api.put(
+                `/notifications/${notification.id}`
             );
 
-            console.log(
-                "Notification marquée comme lue :",
-                response.data
-            );
-
-            setNotifications((currentNotifications) =>
-                currentNotifications.map(
-                    (notification) =>
-                        notification.id === id
-                            ? {
-                                  ...notification,
-                                  is_read: true,
-                              }
-                            : notification
+            setNotifications((previous) =>
+                previous.map((item) =>
+                    item.id === notification.id
+                        ? {
+                            ...item,
+                            is_read: true,
+                        }
+                        : item
                 )
             );
-
         } catch (err) {
             console.error(
-                "Erreur marquage notification :",
+                "Erreur lecture notification:",
                 err
             );
 
@@ -132,33 +113,36 @@ export default function Notifications() {
                 err.response?.data?.message ||
                 "Impossible de marquer la notification comme lue."
             );
+        } finally {
+            setMarkingId(null);
         }
     };
 
-    // ==========================================
-    // TOUT MARQUER COMME LU
-    // ==========================================
+    // =========================================================
+    // MARK ALL AS READ
+    // =========================================================
 
     const markAllAsRead = async () => {
+        if (unreadCount === 0) {
+            return;
+        }
+
         try {
-            setError("");
+            setMarkingAll(true);
 
             await api.put(
                 "/notifications/read-all"
             );
 
-            setNotifications((currentNotifications) =>
-                currentNotifications.map(
-                    (notification) => ({
-                        ...notification,
-                        is_read: true,
-                    })
-                )
+            setNotifications((previous) =>
+                previous.map((item) => ({
+                    ...item,
+                    is_read: true,
+                }))
             );
-
         } catch (err) {
             console.error(
-                "Erreur marquage de toutes les notifications :",
+                "Erreur notifications:",
                 err
             );
 
@@ -166,66 +150,126 @@ export default function Notifications() {
                 err.response?.data?.message ||
                 "Impossible de marquer les notifications comme lues."
             );
+        } finally {
+            setMarkingAll(false);
         }
     };
 
-    // ==========================================
-    // SUPPRIMER UNE NOTIFICATION
-    // ==========================================
+    // =========================================================
+    // ICON
+    // =========================================================
 
-    const deleteNotification = async (id) => {
-        const confirmed = window.confirm(
-            "Voulez-vous vraiment supprimer cette notification ?"
-        );
+    const getNotificationIcon = (
+        notification
+    ) => {
+        const type =
+            notification?.type
+                ?.toString()
+                ?.toLowerCase();
 
-        if (!confirmed) {
-            return;
+        if (
+            type === "space_added" ||
+            type === "space-member-added"
+        ) {
+            return "👥";
         }
 
-        try {
-            setError("");
-
-            await api.delete(
-                `/notifications/${id}`
-            );
-
-            setNotifications(
-                (currentNotifications) =>
-                    currentNotifications.filter(
-                        (notification) =>
-                            notification.id !== id
-                    )
-            );
-
-        } catch (err) {
-            console.error(
-                "Erreur suppression notification :",
-                err
-            );
-
-            setError(
-                err.response?.data?.message ||
-                "Impossible de supprimer la notification."
-            );
+        if (
+            type === "document" ||
+            type === "document_added"
+        ) {
+            return "📄";
         }
+
+        if (
+            type === "announcement"
+        ) {
+            return "📢";
+        }
+
+        if (
+            type === "success"
+        ) {
+            return "✓";
+        }
+
+        if (
+            type === "warning"
+        ) {
+            return "!";
+        }
+
+        return "🔔";
     };
 
-    // ==========================================
-    // FORMATTER LA DATE
-    // ==========================================
+    // =========================================================
+    // ICON CLASS
+    // =========================================================
+
+    const getNotificationTypeClass = (
+        notification
+    ) => {
+        const type =
+            notification?.type
+                ?.toString()
+                ?.toLowerCase();
+
+        if (
+            type === "space_added" ||
+            type === "space-member-added"
+        ) {
+            return "space";
+        }
+
+        if (
+            type === "document" ||
+            type === "document_added"
+        ) {
+            return "document";
+        }
+
+        if (
+            type === "announcement"
+        ) {
+            return "announcement";
+        }
+
+        if (
+            type === "success"
+        ) {
+            return "success";
+        }
+
+        if (
+            type === "warning"
+        ) {
+            return "warning";
+        }
+
+        return "default";
+    };
+
+    // =========================================================
+    // DATE
+    // =========================================================
 
     const formatDate = (date) => {
         if (!date) {
             return "";
         }
 
-        const formattedDate = new Date(date);
+        const parsedDate =
+            new Date(date);
 
-        if (Number.isNaN(formattedDate.getTime())) {
+        if (
+            Number.isNaN(
+                parsedDate.getTime()
+            )
+        ) {
             return "";
         }
 
-        return formattedDate.toLocaleString(
+        return parsedDate.toLocaleString(
             "fr-FR",
             {
                 day: "2-digit",
@@ -237,205 +281,209 @@ export default function Notifications() {
         );
     };
 
-    // ==========================================
-    // DÉTERMINER SI UNE NOTIFICATION EST LUE
-    // ==========================================
-
-    const isRead = (notification) => {
-        return (
-            notification.is_read === true ||
-            notification.is_read === 1
-        );
-    };
-
-    // ==========================================
-    // AFFICHAGE
-    // ==========================================
+    // =========================================================
+    // RENDER
+    // =========================================================
 
     return (
-        <div className="dashboard-layout">
+        <div className="notifications-page">
 
-            {/* SIDEBAR */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
-            <Sidebar />
+            <header className="notifications-header">
 
-            {/* CONTENU PRINCIPAL */}
+                <div className="notifications-title-wrapper">
 
-            <main className="notifications-main">
-
-                {/* =========================
-                    HEADER
-                ========================== */}
-
-                <header className="notifications-header">
-
-                    <div>
-                        <h1>
-                            Notifications
-                        </h1>
-
-                        <p>
-                            Consultez vos notifications
-                            et actualités.
-                        </p>
-                    </div>
-
-                    {unreadCount > 0 && (
-                        <button
-                            type="button"
-                            className="mark-all-button"
-                            onClick={markAllAsRead}
-                        >
-                            ✓ Tout marquer comme lu
-                        </button>
-                    )}
-
-                </header>
-
-                {/* =========================
-                    RÉSUMÉ
-                ========================== */}
-
-                <div className="notification-summary">
-
-                    <div className="notification-summary-icon">
+                    <div className="notifications-title-icon">
                         🔔
                     </div>
 
                     <div>
-                        <span>
-                            Notifications non lues
-                        </span>
+                        <div className="notifications-title-line">
 
-                        <strong>
-                            {unreadCount}
-                        </strong>
+                            <h1>
+                                Notifications
+                            </h1>
+
+                            {unreadCount > 0 && (
+                                <span className="notifications-count">
+                                    {unreadCount}
+                                </span>
+                            )}
+
+                        </div>
+
+                        <p>
+                            Consultez vos dernières notifications
+                            et les activités importantes.
+                        </p>
                     </div>
 
                 </div>
 
-                {/* =========================
-                    ERREUR
-                ========================== */}
+                {unreadCount > 0 && (
 
-                {error && (
-                    <div className="notification-error">
+                    <button
+                        type="button"
+                        className="notifications-read-all"
+                        onClick={
+                            markAllAsRead
+                        }
+                        disabled={markingAll}
+                    >
+                        {markingAll ? (
+                            <>
+                                <span className="notification-button-spinner" />
+                                Traitement...
+                            </>
+                        ) : (
+                            <>
+                                ✓
+                                Tout marquer comme lu
+                            </>
+                        )}
+                    </button>
 
-                        <span>
-                            ⚠️
-                        </span>
+                )}
+
+            </header>
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+
+                <div className="notifications-alert">
+
+                    <div className="notifications-alert-icon">
+                        !
+                    </div>
+
+                    <div className="notifications-alert-content">
+
+                        <strong>
+                            Une erreur est survenue
+                        </strong>
 
                         <span>
                             {error}
                         </span>
 
                     </div>
-                )}
 
-                {/* =========================
-                    CHARGEMENT
-                ========================== */}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setError("")
+                        }
+                    >
+                        ×
+                    </button>
 
-                {loading ? (
+                </div>
 
-                    <div className="notifications-loading">
+            )}
 
-                        <div className="loading-icon">
-                            🔔
-                        </div>
+            {/* =================================================
+                CONTENT
+            ================================================= */}
 
-                        <p>
-                            Chargement des notifications...
-                        </p>
+            {loading ? (
 
+                <div className="notifications-loading">
+
+                    <div className="notifications-spinner" />
+
+                    <span>
+                        Chargement des notifications...
+                    </span>
+
+                </div>
+
+            ) : notifications.length === 0 ? (
+
+                <div className="notifications-empty">
+
+                    <div className="notifications-empty-icon">
+                        🔔
                     </div>
 
-                ) : notifications.length === 0 ? (
+                    <h2>
+                        Aucune notification
+                    </h2>
 
-                    /* =========================
-                       AUCUNE NOTIFICATION
-                    ========================== */
+                    <p>
+                        Vous êtes à jour. Aucune nouvelle
+                        notification pour le moment.
+                    </p>
 
-                    <div className="notifications-empty">
+                </div>
 
-                        <div className="empty-icon">
-                            🔔
-                        </div>
+            ) : (
 
-                        <h2>
-                            Aucune notification
-                        </h2>
-
-                        <p>
-                            Vous n'avez aucune
-                            notification pour le moment.
-                        </p>
-
-                        <button
-                            type="button"
-                            className="refresh-button"
-                            onClick={fetchNotifications}
-                        >
-                            🔄 Actualiser
-                        </button>
-
-                    </div>
-
-                ) : (
-
-                    /* =========================
-                       LISTE DES NOTIFICATIONS
-                    ========================== */
+                <div className="notifications-container">
 
                     <div className="notifications-list">
 
                         {notifications.map(
                             (notification) => {
 
-                                const notificationIsRead =
-                                    isRead(notification);
+                                const isUnread =
+                                    !notification.is_read;
+
+                                const iconClass =
+                                    getNotificationTypeClass(
+                                        notification
+                                    );
 
                                 return (
-                                    <div
-                                        key={notification.id}
-                                        className={`notification-card ${
-                                            notificationIsRead
-                                                ? "read"
-                                                : "unread"
-                                        }`}
+
+                                    <article
+                                        key={
+                                            notification.id
+                                        }
+                                        className={
+                                            `notification-card ${
+                                                isUnread
+                                                    ? "notification-unread"
+                                                    : "notification-read"
+                                            }`
+                                        }
+                                        onClick={() =>
+                                            isUnread &&
+                                            markAsRead(
+                                                notification
+                                            )
+                                        }
                                     >
 
-                                        {/* ICÔNE */}
-
                                         <div
-                                            className="notification-icon"
+                                            className={
+                                                `notification-icon ${iconClass}`
+                                            }
                                         >
-                                            {notificationIsRead
-                                                ? "✓"
-                                                : "🔔"}
+                                            {getNotificationIcon(
+                                                notification
+                                            )}
                                         </div>
 
-                                        {/* CONTENU */}
+                                        <div className="notification-body">
 
-                                        <div
-                                            className="notification-content"
-                                        >
-
-                                            <div
-                                                className="notification-title-row"
-                                            >
+                                            <div className="notification-top">
 
                                                 <h3>
                                                     {
-                                                        notification.title
+                                                        notification.title ||
+                                                        "Notification"
                                                     }
                                                 </h3>
 
-                                                {!notificationIsRead && (
-                                                    <span
-                                                        className="unread-badge"
-                                                    >
-                                                        Nouveau
+                                                {isUnread && (
+                                                    <span className="unread-label">
+                                                        Nouvelle
                                                     </span>
                                                 )}
 
@@ -443,62 +491,65 @@ export default function Notifications() {
 
                                             <p>
                                                 {
-                                                    notification.message
+                                                    notification.message ||
+                                                    "Vous avez reçu une nouvelle notification."
                                                 }
                                             </p>
 
-                                            <small>
-                                                {formatDate(
-                                                    notification.created_at
-                                                )}
-                                            </small>
+                                            <div className="notification-bottom">
 
-                                        </div>
+                                                <span className="notification-date">
+                                                    {formatDate(
+                                                        notification.created_at
+                                                    )}
+                                                </span>
 
-                                        {/* ACTIONS */}
+                                                {isUnread && (
 
-                                        <div
-                                            className="notification-actions"
-                                        >
-
-                                            {!notificationIsRead && (
-                                                <button
-                                                    type="button"
-                                                    className="read-button"
-                                                    onClick={() =>
-                                                        markAsRead(
+                                                    <button
+                                                        type="button"
+                                                        className="notification-read-button"
+                                                        disabled={
+                                                            markingId ===
                                                             notification.id
-                                                        )
-                                                    }
-                                                >
-                                                    ✓ Lire
-                                                </button>
-                                            )}
+                                                        }
+                                                        onClick={(
+                                                            event
+                                                        ) => {
+                                                            event.stopPropagation();
 
-                                            <button
-                                                type="button"
-                                                className="delete-button"
-                                                title="Supprimer"
-                                                onClick={() =>
-                                                    deleteNotification(
+                                                            markAsRead(
+                                                                notification
+                                                            );
+                                                        }}
+                                                    >
+                                                        {markingId ===
                                                         notification.id
-                                                    )
-                                                }
-                                            >
-                                                🗑️
-                                            </button>
+                                                            ? "..."
+                                                            : "Marquer comme lu"}
+                                                    </button>
+
+                                                )}
+
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        {isUnread && (
+                                            <span className="notification-unread-dot" />
+                                        )}
+
+                                    </article>
+
                                 );
                             }
                         )}
 
                     </div>
-                )}
 
-            </main>
+                </div>
+
+            )}
 
         </div>
     );

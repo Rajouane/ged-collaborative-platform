@@ -9,24 +9,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('folders', function (Blueprint $table) {
-
-            $table->foreignId('space_id')
+            $table->unsignedBigInteger('space_id')
                 ->nullable()
-                ->after('user_id')
-                ->constrained('spaces')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
+                ->after('user_id');
 
+            $table->foreign('space_id')
+                ->references('id')
+                ->on('spaces')
+                ->onUpdate('cascade')
+                ->onDelete('set null');
         });
     }
 
     public function down(): void
     {
         Schema::table('folders', function (Blueprint $table) {
-
             $table->dropForeign(['space_id']);
             $table->dropColumn('space_id');
-
         });
     }
 };

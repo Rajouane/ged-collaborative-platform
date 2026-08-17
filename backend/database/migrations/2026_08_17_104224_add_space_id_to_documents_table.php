@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('folders', function (Blueprint $table) {
+        Schema::table('documents', function (Blueprint $table) {
 
             $table->foreignId('space_id')
                 ->nullable()
@@ -22,9 +22,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('folders', function (Blueprint $table) {
+        Schema::table('documents', function (Blueprint $table) {
 
-            $table->dropForeign(['space_id']);
+            $table->dropForeign([
+                'space_id'
+            ]);
+
             $table->dropColumn('space_id');
 
         });

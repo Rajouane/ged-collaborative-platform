@@ -1,8 +1,7 @@
 /* =========================================================
    TOKENS
    Palette pensée pour rester lisible en usage pro (GED/2M),
-   avec un accent inspiré du logo (corail + sarcelle) plutôt
-   qu'un bleu générique.
+   avec un accent inspiré du logo (corail + sarcelle)
 ========================================================= */
 
 .sidebar {
@@ -57,11 +56,14 @@
     border-bottom: 1px solid var(--sb-border);
 }
 
-/* halo ovale ajusté à la forme du logo */
+
+/* Halo ovale ajusté à la forme du logo */
+
 .sidebar-brand::before {
     content: "";
 
     position: absolute;
+
     left: 50%;
     top: 14px;
 
@@ -81,6 +83,7 @@
 
     pointer-events: none;
 }
+
 
 .sidebar-logo-image {
     position: relative;
@@ -144,10 +147,13 @@
     position: relative;
 
     width: 100%;
+
     min-height: 46px;
 
     display: flex;
+
     align-items: center;
+
     gap: 13px;
 
     padding: 0 14px 0 16px;
@@ -163,25 +169,40 @@
     text-decoration: none;
 
     font-size: 14px;
+
     font-weight: 500;
+
     letter-spacing: 0.1px;
 
-    transition: background 0.16s ease, color 0.16s ease;
+    transition:
+        background 0.16s ease,
+        color 0.16s ease;
 }
 
-/* barre d'accent, masquée par défaut */
+
+/* =========================================================
+   BARRE D'ACCENT
+========================================================= */
+
 .sidebar-link::before {
     content: "";
 
     position: absolute;
+
     left: -12px;
+
     top: 8px;
     bottom: 8px;
 
     width: 3px;
+
     border-radius: 3px;
 
-    background: linear-gradient(180deg, var(--sb-accent), var(--sb-accent-2));
+    background: linear-gradient(
+        180deg,
+        var(--sb-accent),
+        var(--sb-accent-2)
+    );
 
     opacity: 0;
 
@@ -195,6 +216,7 @@
 
 .sidebar-link:hover {
     background: var(--sb-bg-raised);
+
     color: var(--sb-text);
 }
 
@@ -205,13 +227,17 @@
 
 .sidebar-link.active {
     background: var(--sb-accent-soft);
+
     color: var(--sb-text-active);
+
     font-weight: 600;
 }
+
 
 .sidebar-link.active::before {
     opacity: 1;
 }
+
 
 .sidebar-link.active .sidebar-icon {
     color: var(--sb-accent);
@@ -229,11 +255,13 @@
     flex-shrink: 0;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     color: inherit;
 }
+
 
 .sidebar-icon svg {
     width: 100%;
@@ -247,17 +275,24 @@
 
 .sidebar-link-text {
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
 }
 
 
 /* =========================================================
-   SPACER
+   PETIT ESPACE AVANT DÉCONNEXION
+   IMPORTANT :
+   Pas de flex: 1 ici.
+   Cela évite le grand espace vide.
 ========================================================= */
 
 .sidebar-spacer {
-    flex: 1;
+    height: 18px;
+
+    flex: none;
 }
 
 
@@ -266,7 +301,7 @@
 ========================================================= */
 
 .sidebar-bottom {
-    padding: 14px 12px 20px;
+    padding: 10px 12px 20px;
 
     border-top: 1px solid var(--sb-border);
 
@@ -280,10 +315,13 @@
 
 .sidebar-logout {
     width: 100%;
+
     min-height: 46px;
 
     display: flex;
+
     align-items: center;
+
     gap: 13px;
 
     padding: 0 14px 0 16px;
@@ -291,6 +329,7 @@
     box-sizing: border-box;
 
     border: 0;
+
     border-radius: 10px;
 
     background: transparent;
@@ -298,18 +337,25 @@
     color: var(--sb-text-muted);
 
     font-family: inherit;
+
     font-size: 14px;
+
     font-weight: 500;
 
     cursor: pointer;
 
-    transition: background 0.16s ease, color 0.16s ease;
+    transition:
+        background 0.16s ease,
+        color 0.16s ease;
 }
+
 
 .sidebar-logout:hover {
     background: var(--sb-danger-soft);
+
     color: var(--sb-danger);
 }
+
 
 .sidebar-logout-icon {
     width: 20px;
@@ -318,15 +364,68 @@
     flex-shrink: 0;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     color: inherit;
 }
 
+
 .sidebar-logout-icon svg {
     width: 100%;
     height: 100%;
+}
+
+
+/* =========================================================
+   NOTIFICATION ICON WRAPPER
+========================================================= */
+
+.notification-icon-wrapper {
+    position: relative;
+}
+
+
+/* =========================================================
+   NOTIFICATION BADGE
+========================================================= */
+
+.notification-badge {
+    position: absolute;
+
+    top: -7px;
+    right: -8px;
+
+    min-width: 17px;
+    height: 17px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 4px;
+
+    box-sizing: border-box;
+
+    border-radius: 999px;
+
+    background: #FF4D4F;
+
+    color: #FFFFFF;
+
+    border: 2px solid #0C0E13;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    z-index: 5;
 }
 
 
@@ -338,12 +437,15 @@
     width: 4px;
 }
 
+
 .sidebar-menu::-webkit-scrollbar-track {
     background: transparent;
 }
 
+
 .sidebar-menu::-webkit-scrollbar-thumb {
     background: #262B36;
+
     border-radius: 10px;
 }
 
@@ -353,6 +455,7 @@
 ========================================================= */
 
 @media (max-width: 1000px) {
+
     .sidebar {
         width: 240px;
     }
@@ -364,6 +467,7 @@
     .sidebar-brand::before {
         width: 120px;
         height: 54px;
+
         top: 12px;
     }
 
@@ -372,7 +476,13 @@
     }
 }
 
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
 @media (max-width: 700px) {
+
     .sidebar {
         width: 210px;
     }
@@ -384,6 +494,7 @@
     .sidebar-brand::before {
         width: 100px;
         height: 46px;
+
         top: 10px;
     }
 
@@ -393,14 +504,18 @@
 
     .sidebar-section-title {
         padding-left: 18px;
+
         font-size: 10px;
     }
 
     .sidebar-link,
     .sidebar-logout {
         min-height: 42px;
+
         padding: 0 10px 0 12px;
+
         gap: 10px;
+
         font-size: 13px;
     }
 
@@ -408,5 +523,19 @@
     .sidebar-logout-icon {
         width: 18px;
         height: 18px;
+    }
+
+    .notification-badge {
+        top: -6px;
+        right: -7px;
+
+        min-width: 16px;
+        height: 16px;
+
+        font-size: 8px;
+    }
+
+    .sidebar-spacer {
+        height: 12px;
     }
 }

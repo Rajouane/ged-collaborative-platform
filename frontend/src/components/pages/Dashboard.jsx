@@ -6,8 +6,7 @@ import UserDashboard from "./UserDashboard.jsx";
 
 export default function Dashboard() {
 
-    const userData =
-        localStorage.getItem("user");
+    const userData = localStorage.getItem("user");
 
     if (!userData) {
         return (
@@ -40,31 +39,19 @@ export default function Dashboard() {
         );
     }
 
-
-    const roleId =
-        Number(user.role_id);
-
-
-    /* ADMIN */
+    const roleId = Number(user?.role_id);
 
     if (roleId === 1) {
         return <AdminDashboard />;
     }
 
-
-    /* RESPONSABLE */
-
     if (roleId === 2) {
         return <ResponsableDashboard />;
     }
 
-
-    /* UTILISATEUR */
-
     if (roleId === 3) {
         return <UserDashboard />;
     }
-
 
     return (
         <div className="dashboard-error">
@@ -74,9 +61,7 @@ export default function Dashboard() {
             </h2>
 
             <p>
-                Role ID :
-                {" "}
-                {user.role_id}
+                Role ID : {user?.role_id}
             </p>
 
         </div>

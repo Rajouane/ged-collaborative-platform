@@ -8,11 +8,36 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
-    {
-        if (!$request->user() || $request->user()->role_id != 1) {
+    public function handle(
+        Request $request,
+        Closure $next
+    ): Response {
+        $user = $request->user();
+
+        if (!$user) {
             return response()->json([
-                'message' => 'Accès refusé. Administrateur uniquement.'
+                'success' => false,
+                'message' => 'Non authentifié.',
+            ], 401);
+        }
+
+        $user->loadMissing('role');
+
+        if (!$user->role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun rôle associé à cet utilisateur.',
+            ], 403);
+        }
+
+        $roleName = strtolower(
+            trim($user->role->name)
+        );
+
+        if ($roleName !== 'administrateur') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Accès refusé. Administrateur uniquement.',
             ], 403);
         }
 
