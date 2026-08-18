@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "react";
+
 import api from "../services/api";
 import "./Notifications.css";
 
 export default function Notifications() {
-    const [notifications, setNotifications] = useState([]);
 
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -12,11 +19,128 @@ export default function Notifications() {
     const [markingAll, setMarkingAll] = useState(false);
 
     // =========================================================
+    // SOUND
+    // =========================================================
+
+    const notificationSound = useRef(null);
+    const previousNotificationIds = useRef(null);
+
+    // =========================================================
+    // INITIALIZE SOUND
+    // =========================================================
+
+    useEffect(() => {
+
+        notificationSound.current = new Audio(
+            "/sounds/notification.mp3"
+        );
+
+        notificationSound.current.volume = 0.7;
+        notificationSound.current.preload = "auto";
+
+        return () => {
+
+            if (notificationSound.current) {
+                notificationSound.current.pause();
+                notificationSound.current = null;
+            }
+
+        };
+
+    }, []);
+
+    // =========================================================
+    // PLAY SOUND
+    // =========================================================
+
+    const playNotificationSound = useCallback(() => {
+
+        if (!notificationSound.current) {
+            return;
+        }
+
+        try {
+
+            notificationSound.current.currentTime = 0;
+
+            const playPromise =
+                notificationSound.current.play();
+
+            if (playPromise !== undefined) {
+
+                playPromise.catch((error) => {
+
+                    console.log(
+                        "Le navigateur bloque la lecture automatique du son.",
+                        error
+                    );
+
+                });
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Erreur son notification:",
+                error
+            );
+
+        }
+
+    }, []);
+
+    // =========================================================
+    // ALLOW SOUND AFTER USER CLICK
+    // =========================================================
+
+    useEffect(() => {
+
+        const activateSound = () => {
+
+            if (!notificationSound.current) {
+                return;
+            }
+
+            /*
+             * On ne joue pas réellement le son.
+             * On prépare simplement l'élément audio
+             * après une interaction utilisateur.
+             */
+
+            notificationSound.current.load();
+
+            document.removeEventListener(
+                "click",
+                activateSound
+            );
+
+        };
+
+        document.addEventListener(
+            "click",
+            activateSound
+        );
+
+        return () => {
+
+            document.removeEventListener(
+                "click",
+                activateSound
+            );
+
+        };
+
+    }, []);
+
+    // =========================================================
     // LOAD NOTIFICATIONS
     // =========================================================
 
     const loadNotifications = useCallback(async () => {
+
         try {
+
             setError("");
 
             const response =
@@ -30,8 +154,86 @@ export default function Notifications() {
                     ? data.data
                     : [];
 
+            // =================================================
+            // CURRENT IDS
+            // =================================================
+
+            const currentIds = result
+                .map(
+                    (notification) =>
+                        notification.id
+                )
+                .filter(Boolean);
+
+            // =================================================
+            // FIRST LOAD
+            // =================================================
+
+            if (
+                previousNotificationIds.current === null
+            ) {
+
+                /*
+                 * Première ouverture :
+                 * on mémorise les notifications existantes.
+                 *
+                 * Aucun son ici.
+                 */
+
+                previousNotificationIds.current =
+                    currentIds;
+
+            } else {
+
+                const previousIds =
+                    previousNotificationIds.current;
+
+                // =================================================
+                // DETECT NEW NOTIFICATIONS
+                // =================================================
+
+                const newNotifications =
+                    result.filter(
+                        (notification) =>
+                            notification.id &&
+                            !previousIds.includes(
+                                notification.id
+                            )
+                    );
+
+                // =================================================
+                // PLAY SOUND
+                // =================================================
+
+                if (
+                    newNotifications.length > 0
+                ) {
+
+                    console.log(
+                        "🔔 Nouvelle notification !"
+                    );
+
+                    playNotificationSound();
+
+                }
+
+                // =================================================
+                // UPDATE IDS
+                // =================================================
+
+                previousNotificationIds.current =
+                    currentIds;
+
+            }
+
+            // =================================================
+            // UPDATE NOTIFICATIONS
+            // =================================================
+
             setNotifications(result);
+
         } catch (err) {
+
             console.error(
                 "Erreur notifications:",
                 err
@@ -41,17 +243,26 @@ export default function Notifications() {
                 err.response?.data?.message ||
                 "Impossible de charger les notifications."
             );
+
         } finally {
+
             setLoading(false);
+
         }
-    }, []);
+
+    }, [playNotificationSound]);
 
     // =========================================================
-    // INITIAL LOAD + REFRESH
+    // INITIAL LOAD + AUTO REFRESH
     // =========================================================
 
     useEffect(() => {
+
         loadNotifications();
+
+        /*
+         * Vérification toutes les 10 secondes.
+         */
 
         const interval = setInterval(
             loadNotifications,
@@ -59,8 +270,11 @@ export default function Notifications() {
         );
 
         return () => {
+
             clearInterval(interval);
+
         };
+
     }, [loadNotifications]);
 
     // =========================================================
@@ -68,10 +282,12 @@ export default function Notifications() {
     // =========================================================
 
     const unreadCount = useMemo(() => {
+
         return notifications.filter(
             (notification) =>
                 !notification.is_read
         ).length;
+
     }, [notifications]);
 
     // =========================================================
@@ -79,6 +295,7 @@ export default function Notifications() {
     // =========================================================
 
     const markAsRead = async (notification) => {
+
         if (
             !notification ||
             notification.is_read
@@ -87,7 +304,10 @@ export default function Notifications() {
         }
 
         try {
-            setMarkingId(notification.id);
+
+            setMarkingId(
+                notification.id
+            );
 
             await api.put(
                 `/notifications/${notification.id}`
@@ -98,12 +318,14 @@ export default function Notifications() {
                     item.id === notification.id
                         ? {
                             ...item,
-                            is_read: true,
+                            is_read: true
                         }
                         : item
                 )
             );
+
         } catch (err) {
+
             console.error(
                 "Erreur lecture notification:",
                 err
@@ -113,9 +335,13 @@ export default function Notifications() {
                 err.response?.data?.message ||
                 "Impossible de marquer la notification comme lue."
             );
+
         } finally {
+
             setMarkingId(null);
+
         }
+
     };
 
     // =========================================================
@@ -123,11 +349,13 @@ export default function Notifications() {
     // =========================================================
 
     const markAllAsRead = async () => {
+
         if (unreadCount === 0) {
             return;
         }
 
         try {
+
             setMarkingAll(true);
 
             await api.put(
@@ -137,10 +365,12 @@ export default function Notifications() {
             setNotifications((previous) =>
                 previous.map((item) => ({
                     ...item,
-                    is_read: true,
+                    is_read: true
                 }))
             );
+
         } catch (err) {
+
             console.error(
                 "Erreur notifications:",
                 err
@@ -150,9 +380,13 @@ export default function Notifications() {
                 err.response?.data?.message ||
                 "Impossible de marquer les notifications comme lues."
             );
+
         } finally {
+
             setMarkingAll(false);
+
         }
+
     };
 
     // =========================================================
@@ -162,6 +396,7 @@ export default function Notifications() {
     const getNotificationIcon = (
         notification
     ) => {
+
         const type =
             notification?.type
                 ?.toString()
@@ -209,6 +444,7 @@ export default function Notifications() {
     const getNotificationTypeClass = (
         notification
     ) => {
+
         const type =
             notification?.type
                 ?.toString()
@@ -254,6 +490,7 @@ export default function Notifications() {
     // =========================================================
 
     const formatDate = (date) => {
+
         if (!date) {
             return "";
         }
@@ -276,9 +513,10 @@ export default function Notifications() {
                 month: "2-digit",
                 year: "numeric",
                 hour: "2-digit",
-                minute: "2-digit",
+                minute: "2-digit"
             }
         );
+
     };
 
     // =========================================================
@@ -286,6 +524,7 @@ export default function Notifications() {
     // =========================================================
 
     return (
+
         <div className="notifications-page">
 
             {/* =================================================
@@ -301,6 +540,7 @@ export default function Notifications() {
                     </div>
 
                     <div>
+
                         <div className="notifications-title-line">
 
                             <h1>
@@ -308,9 +548,11 @@ export default function Notifications() {
                             </h1>
 
                             {unreadCount > 0 && (
+
                                 <span className="notifications-count">
                                     {unreadCount}
                                 </span>
+
                             )}
 
                         </div>
@@ -319,6 +561,7 @@ export default function Notifications() {
                             Consultez vos dernières notifications
                             et les activités importantes.
                         </p>
+
                     </div>
 
                 </div>
@@ -328,22 +571,26 @@ export default function Notifications() {
                     <button
                         type="button"
                         className="notifications-read-all"
-                        onClick={
-                            markAllAsRead
-                        }
+                        onClick={markAllAsRead}
                         disabled={markingAll}
                     >
+
                         {markingAll ? (
+
                             <>
                                 <span className="notification-button-spinner" />
                                 Traitement...
                             </>
+
                         ) : (
+
                             <>
                                 ✓
                                 Tout marquer comme lu
                             </>
+
                         )}
+
                     </button>
 
                 )}
@@ -388,7 +635,7 @@ export default function Notifications() {
             )}
 
             {/* =================================================
-                CONTENT
+                LOADING
             ================================================= */}
 
             {loading ? (
@@ -404,6 +651,10 @@ export default function Notifications() {
                 </div>
 
             ) : notifications.length === 0 ? (
+
+                /* =================================================
+                   EMPTY
+                ================================================= */
 
                 <div className="notifications-empty">
 
@@ -423,6 +674,10 @@ export default function Notifications() {
                 </div>
 
             ) : (
+
+                /* =================================================
+                   LIST
+                ================================================= */
 
                 <div className="notifications-container">
 
@@ -460,6 +715,8 @@ export default function Notifications() {
                                         }
                                     >
 
+                                        {/* ICON */}
+
                                         <div
                                             className={
                                                 `notification-icon ${iconClass}`
@@ -469,6 +726,8 @@ export default function Notifications() {
                                                 notification
                                             )}
                                         </div>
+
+                                        {/* BODY */}
 
                                         <div className="notification-body">
 
@@ -482,9 +741,11 @@ export default function Notifications() {
                                                 </h3>
 
                                                 {isUnread && (
+
                                                     <span className="unread-label">
                                                         Nouvelle
                                                     </span>
+
                                                 )}
 
                                             </div>
@@ -499,9 +760,11 @@ export default function Notifications() {
                                             <div className="notification-bottom">
 
                                                 <span className="notification-date">
+
                                                     {formatDate(
                                                         notification.created_at
                                                     )}
+
                                                 </span>
 
                                                 {isUnread && (
@@ -516,17 +779,21 @@ export default function Notifications() {
                                                         onClick={(
                                                             event
                                                         ) => {
+
                                                             event.stopPropagation();
 
                                                             markAsRead(
                                                                 notification
                                                             );
+
                                                         }}
                                                     >
+
                                                         {markingId ===
                                                         notification.id
                                                             ? "..."
                                                             : "Marquer comme lu"}
+
                                                     </button>
 
                                                 )}
@@ -535,13 +802,18 @@ export default function Notifications() {
 
                                         </div>
 
+                                        {/* UNREAD DOT */}
+
                                         {isUnread && (
+
                                             <span className="notification-unread-dot" />
+
                                         )}
 
                                     </article>
 
                                 );
+
                             }
                         )}
 
@@ -552,5 +824,6 @@ export default function Notifications() {
             )}
 
         </div>
+
     );
 }

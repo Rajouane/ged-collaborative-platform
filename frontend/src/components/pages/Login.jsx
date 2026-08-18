@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
-import logo from "../../../public/2M.jpg";
 import "./Login.css";
 
 export default function Login() {
@@ -108,11 +107,11 @@ export default function Login() {
                 <div className="login-brand-grid" />
                 <div className="login-brand-glow" />
 
-                <img
-                    className="login-brand-logo"
-                    src={logo}
-                    alt="2M"
-                />
+                    <img 
+                        className="login-brand-logo"
+                        src="/2M.jpg"
+                        alt="2M"
+                    />
 
                 <h1 className="login-brand-heading">
                     Vos documents, classés,

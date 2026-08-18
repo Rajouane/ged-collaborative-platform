@@ -8,7 +8,6 @@ use App\Models\Notification;
 use App\Models\Space;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
@@ -51,10 +50,7 @@ class DocumentController extends Controller
                 ], 403);
             }
 
-            $query->where(
-                'space_id',
-                $space->id
-            );
+            $query->where('space_id', $space->id);
 
         } else {
 
@@ -62,34 +58,22 @@ class DocumentController extends Controller
 
                 $query->where(function ($q) use ($user) {
 
-                    $q->where(
-                        'user_id',
-                        $user->id
-                    );
+                    $q->where('user_id', $user->id);
 
-                    $q->orWhereHas(
-                        'space',
-                        function ($spaceQuery) use ($user) {
+                    $q->orWhereHas('space', function ($spaceQuery) use ($user) {
 
-                            $spaceQuery
-                                ->where(
-                                    'owner_id',
+                        $spaceQuery
+                            ->where('owner_id', $user->id)
+                            ->orWhereHas('members', function ($memberQuery) use ($user) {
+
+                                $memberQuery->where(
+                                    'users.id',
                                     $user->id
-                                )
-                                ->orWhereHas(
-                                    'members',
-                                    function ($memberQuery) use ($user) {
-
-                                        $memberQuery->where(
-                                            'users.id',
-                                            $user->id
-                                        );
-
-                                    }
                                 );
 
-                        }
-                    );
+                            });
+
+                    });
 
                 });
             }
@@ -179,7 +163,6 @@ class DocumentController extends Controller
             }
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | FOLDER
@@ -238,7 +221,6 @@ class DocumentController extends Controller
             }
         }
 
-
         /*
         |--------------------------------------------------------------------------
         | FILE UPLOAD
@@ -252,10 +234,9 @@ class DocumentController extends Controller
             'public'
         );
 
-
         /*
         |--------------------------------------------------------------------------
-        | CREATE
+        | CREATE DOCUMENT
         |--------------------------------------------------------------------------
         */
 
@@ -287,7 +268,6 @@ class DocumentController extends Controller
             'space_id' =>
                 $validated['space_id'] ?? null,
         ]);
-
 
         /*
         |--------------------------------------------------------------------------
@@ -328,13 +308,6 @@ class DocumentController extends Controller
                 ]);
             }
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD RELATIONS
-        |--------------------------------------------------------------------------
-        */
 
         $document->load([
             'user:id,first_name,last_name,email',
@@ -400,17 +373,6 @@ class DocumentController extends Controller
      * =========================================================
      * PREVIEW
      * =========================================================
-     *
-     * Cette méthode est volontairement indépendante
-     * de auth:sanctum car Chrome doit pouvoir ouvrir
-     * directement cette URL.
-     *
-     * PDF + images + fichiers texte :
-     * affichage inline.
-     *
-     * Word / Excel / PowerPoint :
-     * téléchargement car Chrome ne sait pas les afficher
-     * nativement.
      */
     public function preview(
         Document $document
@@ -438,15 +400,7 @@ class DocumentController extends Controller
             $document->file_path
         );
 
-        $mimeType =
-            $document->file_type;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Si le MIME n'est pas enregistré correctement,
-        | Laravel/PHP détermine le MIME du fichier.
-        |--------------------------------------------------------------------------
-        */
+        $mimeType = $document->file_type;
 
         if (!$mimeType) {
 
@@ -456,13 +410,6 @@ class DocumentController extends Controller
             $mimeType =
                 $detectedMime ?: 'application/octet-stream';
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Types que Chrome peut afficher
-        |--------------------------------------------------------------------------
-        */
 
         $previewable = [
             'application/pdf',
@@ -483,17 +430,6 @@ class DocumentController extends Controller
             'video/webm',
         ];
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Office
-        |--------------------------------------------------------------------------
-        |
-        | Chrome ne peut pas afficher directement DOCX/XLSX/PPTX.
-        | On force donc le téléchargement.
-        |
-        */
-
         if (!in_array(
             strtolower($mimeType),
             $previewable,
@@ -505,13 +441,6 @@ class DocumentController extends Controller
                 $document->file_name ?: 'document'
             );
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | INLINE
-        |--------------------------------------------------------------------------
-        */
 
         return response()->file(
             $fullPath,
@@ -555,12 +484,6 @@ class DocumentController extends Controller
             ], 401);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Vérification accès
-        |--------------------------------------------------------------------------
-        */
-
         if (
             $document->space &&
             !$this->canAccessSpace(
@@ -575,7 +498,6 @@ class DocumentController extends Controller
             ], 403);
         }
 
-
         if (!$document->file_path) {
 
             return response()->json([
@@ -584,9 +506,7 @@ class DocumentController extends Controller
             ], 404);
         }
 
-
         $disk = Storage::disk('public');
-
 
         if (!$disk->exists($document->file_path)) {
 
@@ -596,11 +516,9 @@ class DocumentController extends Controller
             ], 404);
         }
 
-
         $fullPath = $disk->path(
             $document->file_path
         );
-
 
         return response()->download(
             $fullPath,
@@ -611,7 +529,7 @@ class DocumentController extends Controller
 
     /**
      * =========================================================
-     * DELETE
+     * MOVE TO TRASH
      * =========================================================
      */
     public function destroy(
@@ -633,7 +551,6 @@ class DocumentController extends Controller
             'user',
         ])->findOrFail($id);
 
-
         $role = $user->role
             ? strtolower(
                 trim(
@@ -641,7 +558,6 @@ class DocumentController extends Controller
                 )
             )
             : '';
-
 
         $isAdmin =
             $role === 'administrateur';
@@ -652,7 +568,6 @@ class DocumentController extends Controller
         $isOwner =
             (int) $document->user_id ===
             (int) $user->id;
-
 
         if ($isAdmin) {
 
@@ -696,6 +611,187 @@ class DocumentController extends Controller
             ], 403);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | SOFT DELETE
+        |--------------------------------------------------------------------------
+        */
+
+        $document->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'Document déplacé vers la corbeille.'
+        ]);
+    }
+
+
+    /**
+     * =========================================================
+     * TRASH
+     * =========================================================
+     */
+    public function trash(Request $request)
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.'
+            ], 401);
+        }
+
+        $query = Document::onlyTrashed()
+            ->with([
+                'user:id,first_name,last_name,email',
+                'folder',
+                'space:id,name,description,owner_id',
+            ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$this->isAdmin($user)) {
+
+            $query->where(function ($q) use ($user) {
+
+                $q->where(
+                    'user_id',
+                    $user->id
+                );
+
+                $q->orWhereHas(
+                    'space',
+                    function ($spaceQuery) use ($user) {
+
+                        $spaceQuery
+                            ->where(
+                                'owner_id',
+                                $user->id
+                            )
+                            ->orWhereHas(
+                                'members',
+                                function ($memberQuery) use ($user) {
+
+                                    $memberQuery->where(
+                                        'users.id',
+                                        $user->id
+                                    );
+
+                                }
+                            );
+                    }
+                );
+            });
+        }
+
+        $documents = $query
+            ->latest('deleted_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $documents,
+        ]);
+    }
+
+
+    /**
+     * =========================================================
+     * RESTORE
+     * =========================================================
+     */
+    public function restore(
+        Request $request,
+        string $id
+    ) {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.'
+            ], 401);
+        }
+
+        $document = Document::onlyTrashed()
+            ->with([
+                'space',
+                'user',
+            ])
+            ->findOrFail($id);
+
+        if (!$this->canManageTrash(
+            $user,
+            $document
+        )) {
+
+            return response()->json([
+                'message' =>
+                    'Vous n\'êtes pas autorisé à restaurer ce document.'
+            ], 403);
+        }
+
+        $document->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'Document restauré avec succès.',
+            'data' => $document,
+        ]);
+    }
+
+
+    /**
+     * =========================================================
+     * FORCE DELETE
+     * =========================================================
+     */
+    public function forceDelete(
+        Request $request,
+        string $id
+    ) {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.'
+            ], 401);
+        }
+
+        $document = Document::onlyTrashed()
+            ->with([
+                'space',
+                'user',
+            ])
+            ->findOrFail($id);
+
+        if (!$this->canManageTrash(
+            $user,
+            $document
+        )) {
+
+            return response()->json([
+                'message' =>
+                    'Vous n\'êtes pas autorisé à supprimer définitivement ce document.'
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | DELETE PHYSICAL FILE
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $document->file_path &&
@@ -709,15 +805,132 @@ class DocumentController extends Controller
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | DELETE DATABASE RECORD
+        |--------------------------------------------------------------------------
+        */
 
-        $document->delete();
-
+        $document->forceDelete();
 
         return response()->json([
             'success' => true,
             'message' =>
-                'Document supprimé avec succès.'
+                'Document supprimé définitivement.'
         ]);
+    }
+
+
+    /**
+     * =========================================================
+     * EMPTY TRASH
+     * =========================================================
+     */
+    public function emptyTrash(
+        Request $request
+    ) {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' =>
+                    'Utilisateur non authentifié.'
+            ], 401);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pour commencer, vider toute la corbeille est réservé
+        | à l'administrateur.
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$this->isAdmin($user)) {
+
+            return response()->json([
+                'message' =>
+                    'Seul l\'administrateur peut vider toute la corbeille.'
+            ], 403);
+        }
+
+        $documents = Document::onlyTrashed()->get();
+
+        foreach ($documents as $document) {
+
+            if (
+                $document->file_path &&
+                Storage::disk('public')->exists(
+                    $document->file_path
+                )
+            ) {
+
+                Storage::disk('public')->delete(
+                    $document->file_path
+                );
+            }
+
+            $document->forceDelete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'La corbeille a été vidée.'
+        ]);
+    }
+
+
+    /**
+     * =========================================================
+     * CAN MANAGE TRASH
+     * =========================================================
+     */
+    private function canManageTrash(
+        User $user,
+        Document $document
+    ): bool {
+
+        if ($this->isAdmin($user)) {
+            return true;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Responsable
+        |--------------------------------------------------------------------------
+        */
+
+        $role = $user->role
+            ? strtolower(
+                trim(
+                    $user->role->name
+                )
+            )
+            : '';
+
+        if ($role === 'responsable') {
+
+            if ($document->space) {
+
+                return $this->canAccessSpace(
+                    $user,
+                    $document->space
+                );
+            }
+
+            return (int) $document->user_id ===
+                (int) $user->id;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Utilisateur
+        |--------------------------------------------------------------------------
+        */
+
+        return (int) $document->user_id ===
+            (int) $user->id;
     }
 
 
@@ -770,16 +983,13 @@ class DocumentController extends Controller
             )
             : '';
 
-
         if ($role === 'administrateur') {
             return true;
         }
 
-
         if ($role === 'responsable') {
             return true;
         }
-
 
         if (
             (int) $space->owner_id ===
@@ -787,7 +997,6 @@ class DocumentController extends Controller
         ) {
             return true;
         }
-
 
         return $space
             ->members()

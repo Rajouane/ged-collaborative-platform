@@ -28,17 +28,19 @@ export default function Documents() {
         file: null,
     });
 
+    /* =========================================================
+       LOAD DATA
+    ========================================================= */
+
     useEffect(() => {
         loadDocuments();
         loadFolders();
         loadSpaces();
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | DOCUMENTS
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       DOCUMENTS
+    ========================================================= */
 
     const loadDocuments = async () => {
         try {
@@ -61,18 +63,16 @@ export default function Documents() {
 
             setError(
                 err.response?.data?.message ||
-                "Impossible de récupérer les documents."
+                    "Impossible de récupérer les documents."
             );
         } finally {
             setLoading(false);
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | FOLDERS
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       FOLDERS
+    ========================================================= */
 
     const loadFolders = async () => {
         try {
@@ -89,14 +89,13 @@ export default function Documents() {
             }
         } catch (err) {
             console.error("Erreur dossiers :", err);
+            setFolders([]);
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | SPACES
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       SPACES
+    ========================================================= */
 
     const loadSpaces = async () => {
         try {
@@ -113,16 +112,13 @@ export default function Documents() {
             }
         } catch (err) {
             console.error("Erreur espaces :", err);
-
             setSpaces([]);
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | OPEN CREATE MODAL
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       CREATE MODAL
+    ========================================================= */
 
     const openCreateModal = () => {
         setFormData({
@@ -136,12 +132,6 @@ export default function Documents() {
         setError("");
         setShowCreateModal(true);
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | CLOSE CREATE MODAL
-    |--------------------------------------------------------------------------
-    */
 
     const closeCreateModal = () => {
         if (creating) {
@@ -159,22 +149,15 @@ export default function Documents() {
         });
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | FORM CHANGE
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       FORM
+    ========================================================= */
 
     const handleChange = (e) => {
-        const {
-            name,
-            value,
-            files,
-        } = e.target;
+        const { name, value, files } = e.target;
 
         setFormData((previous) => ({
             ...previous,
-
             [name]:
                 name === "file"
                     ? files?.[0] || null
@@ -182,11 +165,9 @@ export default function Documents() {
         }));
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE DOCUMENT
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       CREATE DOCUMENT
+    ========================================================= */
 
     const handleCreateDocument = async (e) => {
         e.preventDefault();
@@ -194,18 +175,12 @@ export default function Documents() {
         setError("");
 
         if (!formData.title.trim()) {
-            setError(
-                "Le titre du document est obligatoire."
-            );
-
+            setError("Le titre du document est obligatoire.");
             return;
         }
 
         if (!formData.file) {
-            setError(
-                "Veuillez sélectionner un fichier."
-            );
-
+            setError("Veuillez sélectionner un fichier.");
             return;
         }
 
@@ -214,50 +189,36 @@ export default function Documents() {
 
             const data = new FormData();
 
-            data.append(
-                "title",
-                formData.title
-            );
-
-            data.append(
-                "description",
-                formData.description
-            );
+            data.append("title", formData.title);
+            data.append("description", formData.description);
 
             if (formData.folder_id) {
-                data.append(
-                    "folder_id",
-                    formData.folder_id
-                );
+                data.append("folder_id", formData.folder_id);
             }
 
             if (formData.space_id) {
-                data.append(
-                    "space_id",
-                    formData.space_id
-                );
+                data.append("space_id", formData.space_id);
             }
 
-            data.append(
-                "file",
-                formData.file
-            );
+            data.append("file", formData.file);
 
-            await api.post(
-                "/documents",
-                data,
-                {
-                    headers: {
-                        "Content-Type":
-                            "multipart/form-data",
-                    },
-                }
-            );
+            await api.post("/documents", data, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
 
-            closeCreateModal();
+            setShowCreateModal(false);
+
+            setFormData({
+                title: "",
+                description: "",
+                folder_id: "",
+                space_id: "",
+                file: null,
+            });
 
             await loadDocuments();
-
         } catch (err) {
             console.error(
                 "Erreur création document :",
@@ -265,20 +226,19 @@ export default function Documents() {
             );
 
             if (err.response?.data?.errors) {
-                const errors =
-                    err.response.data.errors;
+                const errors = err.response.data.errors;
 
                 const firstError =
                     Object.values(errors)[0]?.[0];
 
                 setError(
                     firstError ||
-                    "Erreur de validation."
+                        "Erreur de validation."
                 );
             } else {
                 setError(
                     err.response?.data?.message ||
-                    "Impossible de créer le document."
+                        "Impossible de créer le document."
                 );
             }
         } finally {
@@ -286,29 +246,24 @@ export default function Documents() {
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | VIEW DOCUMENT
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       VIEW
+    ========================================================= */
 
     const handleView = (id) => {
         if (!id) {
             setError(
                 "Impossible d'ouvrir ce document."
             );
-
             return;
         }
 
         navigate(`/documents/${id}`);
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE DOCUMENT
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       DELETE
+    ========================================================= */
 
     const handleDelete = async (id) => {
         const confirmed = window.confirm(
@@ -322,9 +277,7 @@ export default function Documents() {
         try {
             setError("");
 
-            await api.delete(
-                `/documents/${id}`
-            );
+            await api.delete(`/documents/${id}`);
 
             setDocuments((previous) =>
                 previous.filter(
@@ -332,7 +285,6 @@ export default function Documents() {
                         document.id !== id
                 )
             );
-
         } catch (err) {
             console.error(
                 "Erreur suppression :",
@@ -341,16 +293,22 @@ export default function Documents() {
 
             setError(
                 err.response?.data?.message ||
-                "Impossible de supprimer ce document."
+                    "Impossible de supprimer ce document."
             );
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILE ICON
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       CORBEILLE
+    ========================================================= */
+
+    const handleTrash = () => {
+        navigate("/trash");
+    };
+
+    /* =========================================================
+       FILE ICON
+    ========================================================= */
 
     const getFileIcon = (document) => {
         const type = (
@@ -411,11 +369,9 @@ export default function Documents() {
         return "📄";
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILE TYPE
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       FILE TYPE
+    ========================================================= */
 
     const getFileType = (document) => {
         const type = (
@@ -468,11 +424,9 @@ export default function Documents() {
         return "FICHIER";
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | DATE
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       DATE
+    ========================================================= */
 
     const formatDate = (date) => {
         if (!date) {
@@ -495,11 +449,9 @@ export default function Documents() {
         );
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | SIZE
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       SIZE
+    ========================================================= */
 
     const formatSize = (size) => {
         if (!size) {
@@ -516,19 +468,13 @@ export default function Documents() {
             return `${bytes} B`;
         }
 
-        if (
-            bytes <
-            1024 * 1024
-        ) {
+        if (bytes < 1024 * 1024) {
             return `${(
                 bytes / 1024
             ).toFixed(1)} KB`;
         }
 
-        if (
-            bytes <
-            1024 * 1024 * 1024
-        ) {
+        if (bytes < 1024 * 1024 * 1024) {
             return `${(
                 bytes /
                 (1024 * 1024)
@@ -541,109 +487,136 @@ export default function Documents() {
         ).toFixed(1)} GB`;
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILTER
-    |--------------------------------------------------------------------------
-    */
+    /* =========================================================
+       FILTER
+    ========================================================= */
 
-    const filteredDocuments =
-        documents.filter(
-            (document) => {
+    const filteredDocuments = documents.filter(
+        (document) => {
+            const search =
+                searchTerm
+                    .toLowerCase()
+                    .trim();
 
-                const search =
-                    searchTerm
-                        .toLowerCase()
-                        .trim();
+            const title =
+                document.title || "";
 
-                const title =
-                    document.title || "";
+            const description =
+                document.description || "";
 
-                const description =
-                    document.description || "";
+            const folderName =
+                document.folder?.name ||
+                document.folder_name ||
+                "";
 
-                const folderName =
-                    document.folder?.name ||
-                    document.folder_name ||
-                    "";
+            const spaceName =
+                document.space?.name ||
+                document.space_name ||
+                "";
 
-                const spaceName =
-                    document.space?.name ||
-                    document.space_name ||
-                    "";
+            const fileName =
+                document.file_name ||
+                document.filename ||
+                "";
 
-                const fileName =
-                    document.file_name ||
-                    document.filename ||
-                    "";
+            const fileType = (
+                document.file_type ||
+                document.mime_type ||
+                ""
+            ).toLowerCase();
 
-                const fileType = (
-                    document.file_type ||
-                    document.mime_type ||
-                    ""
-                ).toLowerCase();
+            const text = `
+                ${title}
+                ${description}
+                ${folderName}
+                ${spaceName}
+                ${fileName}
+            `.toLowerCase();
 
-                const text = `
-                    ${title}
-                    ${description}
-                    ${folderName}
-                    ${spaceName}
-                    ${fileName}
-                `.toLowerCase();
+            const matchesSearch =
+                !search ||
+                text.includes(search);
 
-                const matchesSearch =
-                    !search ||
-                    text.includes(search);
+            const lowerFileName =
+                fileName.toLowerCase();
 
-                const matchesType =
-                    typeFilter === "all" ||
-                    fileType.includes(
-                        typeFilter.toLowerCase()
-                    ) ||
-                    (
-                        typeFilter === "word" &&
-                        (
-                            fileName
-                                .toLowerCase()
-                                .endsWith(".doc") ||
-                            fileName
-                                .toLowerCase()
-                                .endsWith(".docx")
-                        )
-                    ) ||
-                    (
-                        typeFilter === "excel" &&
-                        (
-                            fileName
-                                .toLowerCase()
-                                .endsWith(".xls") ||
-                            fileName
-                                .toLowerCase()
-                                .endsWith(".xlsx")
-                        )
+            let matchesType =
+                typeFilter === "all";
+
+            if (typeFilter === "pdf") {
+                matchesType =
+                    fileType.includes("pdf") ||
+                    lowerFileName.endsWith(
+                        ".pdf"
                     );
-
-                return (
-                    matchesSearch &&
-                    matchesType
-                );
             }
-        );
+
+            if (typeFilter === "word") {
+                matchesType =
+                    fileType.includes("word") ||
+                    fileType.includes("document") ||
+                    lowerFileName.endsWith(
+                        ".doc"
+                    ) ||
+                    lowerFileName.endsWith(
+                        ".docx"
+                    );
+            }
+
+            if (typeFilter === "excel") {
+                matchesType =
+                    fileType.includes("excel") ||
+                    fileType.includes("sheet") ||
+                    lowerFileName.endsWith(
+                        ".xls"
+                    ) ||
+                    lowerFileName.endsWith(
+                        ".xlsx"
+                    );
+            }
+
+            if (typeFilter === "image") {
+                matchesType =
+                    fileType.includes("image") ||
+                    lowerFileName.endsWith(
+                        ".jpg"
+                    ) ||
+                    lowerFileName.endsWith(
+                        ".jpeg"
+                    ) ||
+                    lowerFileName.endsWith(
+                        ".png"
+                    ) ||
+                    lowerFileName.endsWith(
+                        ".webp"
+                    );
+            }
+
+            return (
+                matchesSearch &&
+                matchesType
+            );
+        }
+    );
+
+    /* =========================================================
+       RENDER
+    ========================================================= */
 
     return (
-        <div className="dashboard-layout">
+        <div className="documents-layout">
 
             <Sidebar />
 
             <main className="documents-main">
 
-                {/* =====================================================
+                {/* =================================================
                     HEADER
-                ===================================================== */}
+                ================================================= */}
 
                 <header className="documents-header">
 
-                    <div>
+                    <div className="documents-header-info">
 
                         <h1>
                             Documents
@@ -657,6 +630,8 @@ export default function Documents() {
                     </div>
 
                     <div className="documents-tools">
+
+                        {/* SEARCH */}
 
                         <div className="document-search">
 
@@ -676,6 +651,8 @@ export default function Documents() {
                             />
 
                         </div>
+
+                        {/* FILTER */}
 
                         <select
                             className="document-filter"
@@ -709,6 +686,19 @@ export default function Documents() {
 
                         </select>
 
+                        {/* CORBEILLE */}
+
+                        <button
+                            type="button"
+                            className="trash-button"
+                            onClick={handleTrash}
+                        >
+                            <span>🗑️</span>
+                            Corbeille
+                        </button>
+
+                        {/* NEW DOCUMENT */}
+
                         <button
                             type="button"
                             className="add-document-button"
@@ -723,9 +713,9 @@ export default function Documents() {
 
                 </header>
 
-                {/* =====================================================
+                {/* =================================================
                     CONTENT
-                ===================================================== */}
+                ================================================= */}
 
                 <section className="documents-content">
 
@@ -735,95 +725,39 @@ export default function Documents() {
                         </div>
                     )}
 
-                    {/* =================================================
-                        STATS
-                    ================================================= */}
+                    {/* RESULT INFO */}
 
-                    <div className="documents-stats">
+                    {!loading && (
+                        <div className="documents-toolbar">
 
-                        <div className="document-stat-card">
-
-                            <div className="document-stat-icon">
-                                📄
-                            </div>
-
-                            <div className="document-stat-info">
-
-                                <span>
-                                    Total documents
-                                </span>
-
+                            <div>
                                 <strong>
-                                    {documents.length}
-                                </strong>
-
+                                    {filteredDocuments.length}
+                                </strong>{" "}
+                                document
+                                {filteredDocuments.length !== 1
+                                    ? "s"
+                                    : ""}
                             </div>
+
+                            {(searchTerm ||
+                                typeFilter !== "all") && (
+                                <button
+                                    type="button"
+                                    className="clear-filter-button"
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        setTypeFilter(
+                                            "all"
+                                        );
+                                    }}
+                                >
+                                    Réinitialiser
+                                </button>
+                            )}
 
                         </div>
-
-                        <div className="document-stat-card">
-
-                            <div className="document-stat-icon">
-                                📁
-                            </div>
-
-                            <div className="document-stat-info">
-
-                                <span>
-                                    Dossiers
-                                </span>
-
-                                <strong>
-                                    {folders.length}
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                        <div className="document-stat-card">
-
-                            <div className="document-stat-icon">
-                                🏢
-                            </div>
-
-                            <div className="document-stat-info">
-
-                                <span>
-                                    Espaces
-                                </span>
-
-                                <strong>
-                                    {spaces.length}
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                        <div className="document-stat-card">
-
-                            <div className="document-stat-icon">
-                                🔎
-                            </div>
-
-                            <div className="document-stat-info">
-
-                                <span>
-                                    Résultats
-                                </span>
-
-                                <strong>
-                                    {
-                                        filteredDocuments.length
-                                    }
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                    )}
 
                     {/* =================================================
                         LOADING
@@ -831,6 +765,7 @@ export default function Documents() {
 
                     {loading && (
                         <div className="documents-message">
+                            <div className="loading-spinner"></div>
                             Chargement des documents...
                         </div>
                     )}
@@ -840,8 +775,8 @@ export default function Documents() {
                     ================================================= */}
 
                     {!loading &&
-                        filteredDocuments.length === 0 && (
-
+                        filteredDocuments.length ===
+                            0 && (
                             <div className="empty-documents">
 
                                 <div className="empty-document-icon">
@@ -849,21 +784,34 @@ export default function Documents() {
                                 </div>
 
                                 <h2>
-                                    {searchTerm
+                                    {searchTerm ||
+                                    typeFilter !== "all"
                                         ? "Aucun document trouvé"
-                                        : "Aucun document"
-                                    }
+                                        : "Aucun document"}
                                 </h2>
 
                                 <p>
-                                    {searchTerm
-                                        ? "Essayez avec un autre terme de recherche."
-                                        : "Vous n'avez pas encore de document."
-                                    }
+                                    {searchTerm ||
+                                    typeFilter !== "all"
+                                        ? "Essayez avec un autre terme ou filtre."
+                                        : "Vous n'avez pas encore de document."}
                                 </p>
 
-                            </div>
+                                {!searchTerm &&
+                                    typeFilter ===
+                                        "all" && (
+                                        <button
+                                            type="button"
+                                            className="empty-add-button"
+                                            onClick={
+                                                openCreateModal
+                                            }
+                                        >
+                                            + Ajouter un document
+                                        </button>
+                                    )}
 
+                            </div>
                         )}
 
                     {/* =================================================
@@ -871,8 +819,8 @@ export default function Documents() {
                     ================================================= */}
 
                     {!loading &&
-                        filteredDocuments.length > 0 && (
-
+                        filteredDocuments.length >
+                            0 && (
                             <div className="documents-table-wrapper">
 
                                 <table className="documents-table">
@@ -921,119 +869,111 @@ export default function Documents() {
 
                                         {filteredDocuments.map(
                                             (document) => (
-
                                                 <tr
                                                     key={
                                                         document.id
                                                     }
                                                 >
 
-                                                    {/* DOCUMENT */}
-
                                                     <td>
 
                                                         <div className="document-name">
 
-                                                            <span>
-                                                                {
-                                                                    getFileIcon(
-                                                                        document
-                                                                    )
-                                                                }
+                                                            <span className="document-file-icon">
+                                                                {getFileIcon(
+                                                                    document
+                                                                )}
                                                             </span>
 
-                                                            <strong>
-                                                                {
-                                                                    document.title ||
-                                                                    "Sans titre"
-                                                                }
-                                                            </strong>
+                                                            <div>
+
+                                                                <strong>
+                                                                    {document.title ||
+                                                                        "Sans titre"}
+                                                                </strong>
+
+                                                                {(
+                                                                    document.file_name ||
+                                                                    document.filename
+                                                                ) && (
+                                                                    <small>
+                                                                        {
+                                                                            document.file_name ||
+                                                                            document.filename
+                                                                        }
+                                                                    </small>
+                                                                )}
+
+                                                            </div>
 
                                                         </div>
 
                                                     </td>
 
-                                                    {/* TYPE */}
-
                                                     <td>
 
                                                         <span className="document-type">
-
-                                                            {
-                                                                getFileType(
-                                                                    document
-                                                                )
-                                                            }
-
+                                                            {getFileType(
+                                                                document
+                                                            )}
                                                         </span>
 
                                                     </td>
 
-                                                    {/* ESPACE */}
-
                                                     <td>
 
-                                                        {
-                                                            document.space?.name ||
+                                                        {document
+                                                            .space
+                                                            ?.name ||
                                                             document.space_name ||
-                                                            "Aucun espace"
-                                                        }
+                                                            "Aucun espace"}
 
                                                     </td>
 
-                                                    {/* DOSSIER */}
-
                                                     <td>
 
-                                                        {
-                                                            document.folder?.name ||
+                                                        {document
+                                                            .folder
+                                                            ?.name ||
                                                             document.folder_name ||
-                                                            "Aucun dossier"
-                                                        }
+                                                            "Aucun dossier"}
 
                                                     </td>
 
-                                                    {/* AUTEUR */}
-
                                                     <td>
 
-                                                        {
-                                                            document.user
-                                                                ? `${document.user.first_name || ""} ${document.user.last_name || ""}`.trim() ||
-                                                                  document.user.name ||
-                                                                  document.user.email ||
-                                                                  "Inconnu"
-                                                                : "Inconnu"
-                                                        }
+                                                        {document.user
+                                                            ? `${document.user.first_name || ""} ${
+                                                                  document.user.last_name ||
+                                                                  ""
+                                                              }`.trim() ||
+                                                              document
+                                                                  .user
+                                                                  .name ||
+                                                              document
+                                                                  .user
+                                                                  .email ||
+                                                              "Inconnu"
+                                                            : "Inconnu"}
 
                                                     </td>
 
-                                                    {/* SIZE */}
-
                                                     <td>
 
-                                                        {
-                                                            formatSize(
-                                                                document.file_size ||
+                                                        {formatSize(
+                                                            document.file_size ||
                                                                 document.size
-                                                            )
-                                                        }
+                                                        )}
 
                                                     </td>
-
-                                                    {/* DATE */}
 
                                                     <td>
 
-                                                        {
-                                                            formatDate(
-                                                                document.created_at
-                                                            )
-                                                        }
+                                                        {formatDate(
+                                                            document.created_at
+                                                        )}
 
                                                     </td>
-
-                                                    {/* ACTIONS */}
 
                                                     <td>
 
@@ -1068,7 +1008,6 @@ export default function Documents() {
                                                     </td>
 
                                                 </tr>
-
                                             )
                                         )}
 
@@ -1077,7 +1016,6 @@ export default function Documents() {
                                 </table>
 
                             </div>
-
                         )}
 
                 </section>
@@ -1085,22 +1023,19 @@ export default function Documents() {
             </main>
 
             {/* =========================================================
-                CREATE DOCUMENT MODAL
+                CREATE MODAL
             ========================================================= */}
 
             {showCreateModal && (
-
                 <div
                     className="modal-overlay"
                     onMouseDown={(e) => {
-
                         if (
                             e.target ===
                             e.currentTarget
                         ) {
                             closeCreateModal();
                         }
-
                     }}
                 >
 
@@ -1140,8 +1075,6 @@ export default function Documents() {
                             }
                         >
 
-                            {/* TITLE */}
-
                             <div className="form-group">
 
                                 <label htmlFor="title">
@@ -1164,8 +1097,6 @@ export default function Documents() {
 
                             </div>
 
-                            {/* DESCRIPTION */}
-
                             <div className="form-group">
 
                                 <label htmlFor="description">
@@ -1185,8 +1116,6 @@ export default function Documents() {
                                 />
 
                             </div>
-
-                            {/* SPACE */}
 
                             <div className="form-group">
 
@@ -1211,7 +1140,6 @@ export default function Documents() {
 
                                     {spaces.map(
                                         (space) => (
-
                                             <option
                                                 key={
                                                     space.id
@@ -1220,26 +1148,18 @@ export default function Documents() {
                                                     space.id
                                                 }
                                             >
-
                                                 {space.name}
-
                                                 {" — "}
-
                                                 {space.is_private
                                                     ? "Privé"
-                                                    : "Public"
-                                                }
-
+                                                    : "Public"}
                                             </option>
-
                                         )
                                     )}
 
                                 </select>
 
                             </div>
-
-                            {/* FOLDER */}
 
                             <div className="form-group">
 
@@ -1264,7 +1184,6 @@ export default function Documents() {
 
                                     {folders.map(
                                         (folder) => (
-
                                             <option
                                                 key={
                                                     folder.id
@@ -1273,19 +1192,14 @@ export default function Documents() {
                                                     folder.id
                                                 }
                                             >
-
                                                 {folder.name}
-
                                             </option>
-
                                         )
                                     )}
 
                                 </select>
 
                             </div>
-
-                            {/* FILE */}
 
                             <div className="form-group">
 
@@ -1305,15 +1219,15 @@ export default function Documents() {
 
                                 {formData.file && (
                                     <small>
-                                        Fichier sélectionné :
-                                        {" "}
-                                        {formData.file.name}
+                                        Fichier sélectionné :{" "}
+                                        {
+                                            formData.file
+                                                .name
+                                        }
                                     </small>
                                 )}
 
                             </div>
-
-                            {/* ACTIONS */}
 
                             <div className="modal-actions">
 
@@ -1333,12 +1247,9 @@ export default function Documents() {
                                     className="create-button"
                                     disabled={creating}
                                 >
-
                                     {creating
                                         ? "Création..."
-                                        : "Créer le document"
-                                    }
-
+                                        : "Créer le document"}
                                 </button>
 
                             </div>
@@ -1348,7 +1259,6 @@ export default function Documents() {
                     </div>
 
                 </div>
-
             )}
 
         </div>

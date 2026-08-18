@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'title',
@@ -24,23 +24,16 @@ class Document extends Model
 
     protected $casts = [
         'file_size' => 'integer',
+        'deleted_at' => 'datetime',
     ];
 
-    /**
-     * Dossier du document.
-     */
-    public function folder(): BelongsTo
-    {
-        return $this->belongsTo(
-            Folder::class,
-            'folder_id'
-        );
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | USER
+    |--------------------------------------------------------------------------
+    */
 
-    /**
-     * Utilisateur qui a créé le document.
-     */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(
             User::class,
@@ -48,24 +41,31 @@ class Document extends Model
         );
     }
 
-    /**
-     * Espace auquel appartient le document.
-     */
-    public function space(): BelongsTo
+    /*
+    |--------------------------------------------------------------------------
+    | FOLDER
+    |--------------------------------------------------------------------------
+    */
+
+    public function folder()
+    {
+        return $this->belongsTo(
+            Folder::class,
+            'folder_id'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SPACE
+    |--------------------------------------------------------------------------
+    */
+
+    public function space()
     {
         return $this->belongsTo(
             Space::class,
             'space_id'
-        );
-    }
-
-    /**
-     * Versions du document.
-     */
-    public function versions()
-    {
-        return $this->hasMany(
-            DocumentVersion::class
         );
     }
 }
