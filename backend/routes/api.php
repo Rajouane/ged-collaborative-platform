@@ -27,11 +27,29 @@ Route::post(
 
 
 // ======================================================
+// DOCUMENT PREVIEW
+// ======================================================
+//
+// IMPORTANT : cette route est volontairement hors
+// auth:sanctum car le navigateur doit pouvoir ouvrir
+// directement l'URL du fichier.
+//
+// Exemple :
+// http://127.0.0.1:8000/api/documents/8/preview
+//
+// ======================================================
+
+Route::get(
+    '/documents/{document}/preview',
+    [DocumentController::class, 'preview']
+);
+
+
+// ======================================================
 // AUTHENTICATED
 // ======================================================
 
 Route::middleware('auth:sanctum')->group(function () {
-
 
     // ==================================================
     // AUTH
@@ -54,7 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ==================================================
-    // PROFILE / SETTINGS
+    // PROFILE
     // ==================================================
 
     Route::get(
@@ -74,8 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ==================================================
-    // USERS
-    // ADMIN ONLY
+    // USERS - ADMIN
     // ==================================================
 
     Route::middleware('admin')->group(function () {
@@ -111,6 +128,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==================================================
     // DOCUMENTS
     // ==================================================
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOWNLOAD
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/documents/{document}/download',
+        [DocumentController::class, 'download']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CRUD DOCUMENTS
+    |--------------------------------------------------------------------------
+    */
 
     Route::apiResource(
         'documents',

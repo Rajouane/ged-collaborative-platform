@@ -142,6 +142,25 @@ const IconLogout = () => (
     </svg>
 );
 
+// =========================================
+// ICÔNE MENU (hamburger) — mobile uniquement
+// =========================================
+
+const IconMenu = () => (
+    <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M4 6.5h16" />
+        <path d="M4 12h16" />
+        <path d="M4 17.5h16" />
+    </svg>
+);
+
 export default function Sidebar() {
     const navigate = useNavigate();
 
@@ -149,6 +168,14 @@ export default function Sidebar() {
 
     const [unreadNotifications, setUnreadNotifications] =
         useState(0);
+
+    // =========================================
+    // MENU MOBILE (tiroir)
+    // =========================================
+
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+    const closeMobileMenu = () => setIsMobileOpen(false);
 
     // =========================================
     // RÉCUPÉRER L'UTILISATEUR
@@ -235,6 +262,26 @@ export default function Sidebar() {
     }, []);
 
     // =========================================
+    // FERMER LE TIROIR QUAND ON PASSE EN DESKTOP
+    // (évite qu'il reste "ouvert" en mémoire si on
+    // agrandit la fenêtre)
+    // =========================================
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth > 700) {
+                setIsMobileOpen(false);
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+    }, []);
+
+    // =========================================
     // ROLE
     // =========================================
 
@@ -287,190 +334,227 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="sidebar">
-
+        <>
             {/* =====================================
-                LOGO 2M
+                BOUTON HAMBURGER (mobile uniquement,
+                caché sur desktop par le CSS)
             ===================================== */}
 
-            <div className="sidebar-brand">
-
-                <img
-                    src="/2M.jpg"
-                    alt="2M"
-                    className="sidebar-logo-image"
-                />
-
-            </div>
-
+            <button
+                type="button"
+                className="sidebar-toggle-btn"
+                onClick={() => setIsMobileOpen(true)}
+                aria-label="Ouvrir le menu"
+            >
+                <IconMenu />
+            </button>
 
             {/* =====================================
-                NAVIGATION
+                OVERLAY (assombrit le contenu quand
+                le tiroir mobile est ouvert)
             ===================================== */}
 
-            <div className="sidebar-section-title">
-                Navigation
-            </div>
+            <div
+                className={`sidebar-overlay ${
+                    isMobileOpen ? "sidebar-overlay-visible" : ""
+                }`}
+                onClick={closeMobileMenu}
+            />
+
+            <aside
+                className={`sidebar ${
+                    isMobileOpen ? "sidebar-open" : ""
+                }`}
+            >
+
+                {/* =====================================
+                    LOGO 2M
+                ===================================== */}
+
+                <div className="sidebar-brand">
+
+                    <img
+                        src="/2M.jpg"
+                        alt="2M"
+                        className="sidebar-logo-image"
+                    />
+
+                </div>
 
 
-            <nav className="sidebar-menu">
+                {/* =====================================
+                    NAVIGATION
+                ===================================== */}
 
-                {navItems.map(
-                    ({
-                        to,
-                        label,
-                        Icon,
-                    }) => (
+                <div className="sidebar-section-title">
+                    Navigation
+                </div>
+
+
+                <nav className="sidebar-menu">
+
+                    {navItems.map(
+                        ({
+                            to,
+                            label,
+                            Icon,
+                        }) => (
+
+                            <NavLink
+                                key={to}
+                                to={to}
+                                className={linkClass}
+                                onClick={closeMobileMenu}
+                            >
+
+                                <span className="sidebar-icon">
+                                    <Icon />
+                                </span>
+
+                                <span className="sidebar-link-text">
+                                    {label}
+                                </span>
+
+                            </NavLink>
+
+                        )
+                    )}
+
+
+                    {/* =================================
+                        UTILISATEURS
+                        ADMIN + RESPONSABLE
+                    ================================= */}
+
+                    {(roleId === 1 ||
+                        roleId === 2) && (
 
                         <NavLink
-                            key={to}
-                            to={to}
+                            to="/users"
                             className={linkClass}
+                            onClick={closeMobileMenu}
                         >
 
                             <span className="sidebar-icon">
-                                <Icon />
+                                <IconUsers />
                             </span>
 
                             <span className="sidebar-link-text">
-                                {label}
+                                Utilisateurs
                             </span>
 
                         </NavLink>
 
-                    )
-                )}
+                    )}
 
 
-                {/* =================================
-                    UTILISATEURS
-                    ADMIN + RESPONSABLE
-                ================================= */}
-
-                {(roleId === 1 ||
-                    roleId === 2) && (
+                    {/* =================================
+                        ANNONCES
+                    ================================= */}
 
                     <NavLink
-                        to="/users"
+                        to="/announcements"
                         className={linkClass}
+                        onClick={closeMobileMenu}
                     >
 
                         <span className="sidebar-icon">
-                            <IconUsers />
+                            <IconAnnouncements />
                         </span>
 
                         <span className="sidebar-link-text">
-                            Utilisateurs
+                            Annonces
                         </span>
 
                     </NavLink>
 
-                )}
+
+                    {/* =================================
+                        NOTIFICATIONS
+                    ================================= */}
+
+                    <NavLink
+                        to="/notifications"
+                        className={linkClass}
+                        onClick={closeMobileMenu}
+                    >
+
+                        <span className="sidebar-icon notification-icon-wrapper">
+
+                            <IconNotifications />
+
+                            {unreadNotifications > 0 && (
+                                <span className="notification-badge">
+                                    {unreadNotifications > 99
+                                        ? "99+"
+                                        : unreadNotifications}
+                                </span>
+                            )}
+
+                        </span>
+
+                        <span className="sidebar-link-text">
+                            Notifications
+                        </span>
+
+                    </NavLink>
 
 
-                {/* =================================
-                    ANNONCES
-                ================================= */}
+                    {/* =================================
+                        PARAMÈTRES
+                    ================================= */}
 
-                <NavLink
-                    to="/announcements"
-                    className={linkClass}
-                >
+                    <NavLink
+                        to="/settings"
+                        className={linkClass}
+                        onClick={closeMobileMenu}
+                    >
 
-                    <span className="sidebar-icon">
-                        <IconAnnouncements />
-                    </span>
+                        <span className="sidebar-icon">
+                            <IconSettings />
+                        </span>
 
-                    <span className="sidebar-link-text">
-                        Annonces
-                    </span>
+                        <span className="sidebar-link-text">
+                            Paramètres
+                        </span>
 
-                </NavLink>
+                    </NavLink>
 
-
-                {/* =================================
-                    NOTIFICATIONS
-                ================================= */}
-
-                <NavLink
-                    to="/notifications"
-                    className={linkClass}
-                >
-
-                    <span className="sidebar-icon notification-icon-wrapper">
-
-                        <IconNotifications />
-
-                        {unreadNotifications > 0 && (
-                            <span className="notification-badge">
-                                {unreadNotifications > 99
-                                    ? "99+"
-                                    : unreadNotifications}
-                            </span>
-                        )}
-
-                    </span>
-
-                    <span className="sidebar-link-text">
-                        Notifications
-                    </span>
-
-                </NavLink>
+                </nav>
 
 
-                {/* =================================
-                    PARAMÈTRES
-                ================================= */}
+                {/* =====================================
+                    ESPACE FLEXIBLE
+                ===================================== */}
 
-                <NavLink
-                    to="/settings"
-                    className={linkClass}
-                >
-
-                    <span className="sidebar-icon">
-                        <IconSettings />
-                    </span>
-
-                    <span className="sidebar-link-text">
-                        Paramètres
-                    </span>
-
-                </NavLink>
-
-            </nav>
+                <div className="sidebar-spacer"></div>
 
 
-            {/* =====================================
-                ESPACE FLEXIBLE
-            ===================================== */}
+                {/* =====================================
+                    DÉCONNEXION
+                ===================================== */}
 
-            <div className="sidebar-spacer"></div>
+                <div className="sidebar-bottom">
 
+                    <button
+                        type="button"
+                        className="sidebar-logout"
+                        onClick={handleLogout}
+                    >
 
-            {/* =====================================
-                DÉCONNEXION
-            ===================================== */}
+                        <span className="sidebar-logout-icon">
+                            <IconLogout />
+                        </span>
 
-            <div className="sidebar-bottom">
+                        <span>
+                            Déconnexion
+                        </span>
 
-                <button
-                    type="button"
-                    className="sidebar-logout"
-                    onClick={handleLogout}
-                >
+                    </button>
 
-                    <span className="sidebar-logout-icon">
-                        <IconLogout />
-                    </span>
+                </div>
 
-                    <span>
-                        Déconnexion
-                    </span>
-
-                </button>
-
-            </div>
-
-        </aside>
+            </aside>
+        </>
     );
 }

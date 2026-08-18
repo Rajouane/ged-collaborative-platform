@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -27,6 +26,52 @@ function Folders() {
 
 
     // =====================================
+    // NORMALISER LA RÉPONSE API
+    // =====================================
+
+    const normalizeFolders = (responseData) => {
+
+        // Laravel retourne directement un tableau
+        if (Array.isArray(responseData)) {
+            return responseData;
+        }
+
+        // Laravel retourne :
+        // {
+        //     data: [...]
+        // }
+        if (Array.isArray(responseData?.data)) {
+            return responseData.data;
+        }
+
+        // Laravel retourne :
+        // {
+        //     folders: [...]
+        // }
+        if (Array.isArray(responseData?.folders)) {
+            return responseData.folders;
+        }
+
+        // Laravel retourne :
+        // {
+        //     data: {
+        //         data: [...]
+        //     }
+        // }
+        if (Array.isArray(responseData?.data?.data)) {
+            return responseData.data.data;
+        }
+
+        console.error(
+            "Format de réponse des dossiers inattendu :",
+            responseData
+        );
+
+        return [];
+    };
+
+
+    // =====================================
     // CHARGER LES DOSSIERS
     // =====================================
 
@@ -39,6 +84,10 @@ function Folders() {
 
         try {
 
+            setLoading(true);
+
+            setError("");
+
             const token = localStorage.getItem("token");
 
             const response = await api.get(
@@ -50,11 +99,27 @@ function Folders() {
                 }
             );
 
-            setFolders(response.data);
+
+            console.log(
+                "Réponse API /folders :",
+                response.data
+            );
+
+
+            const foldersData =
+                normalizeFolders(response.data);
+
+
+            setFolders(foldersData);
+
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur récupération dossiers :",
+                error
+            );
+
 
             if (error.response?.status === 401) {
 
@@ -66,6 +131,10 @@ function Folders() {
 
                 return;
             }
+
+
+            setFolders([]);
+
 
             setError(
                 error.response?.data?.message ||
@@ -92,6 +161,8 @@ function Folders() {
 
         setParentId("");
 
+        setError("");
+
         setShowModal(true);
     };
 
@@ -104,9 +175,11 @@ function Folders() {
 
         setEditingFolder(folder);
 
-        setFolderName(folder.name);
+        setFolderName(folder.name || "");
 
         setParentId(folder.parent_id || "");
+
+        setError("");
 
         setShowModal(true);
     };
@@ -120,9 +193,16 @@ function Folders() {
 
         event.preventDefault();
 
+
         if (!folderName.trim()) {
+
+            setError(
+                "Veuillez saisir un nom de dossier."
+            );
+
             return;
         }
+
 
         setCreating(true);
 
@@ -131,7 +211,8 @@ function Folders() {
 
         try {
 
-            const token = localStorage.getItem("token");
+            const token =
+                localStorage.getItem("token");
 
 
             // =========================
@@ -145,7 +226,7 @@ function Folders() {
                     `/folders/${editingFolder.id}`,
 
                     {
-                        name: folderName,
+                        name: folderName.trim(),
 
                         parent_id:
                             parentId || null,
@@ -160,15 +241,38 @@ function Folders() {
                 );
 
 
+                console.log(
+                    "Réponse modification :",
+                    response.data
+                );
+
+
+                const updatedFolder =
+                    response.data?.data ||
+                    response.data?.folder ||
+                    response.data;
+
+
                 setFolders(
-                    (currentFolders) =>
-                        currentFolders.map(
+                    (currentFolders) => {
+
+                        if (
+                            !Array.isArray(
+                                currentFolders
+                            )
+                        ) {
+                            return [];
+                        }
+
+
+                        return currentFolders.map(
                             (folder) =>
                                 folder.id ===
                                 editingFolder.id
-                                    ? response.data
+                                    ? updatedFolder
                                     : folder
-                        )
+                        );
+                    }
                 );
 
             }
@@ -185,7 +289,7 @@ function Folders() {
                     "/folders",
 
                     {
-                        name: folderName,
+                        name: folderName.trim(),
 
                         parent_id:
                             parentId || null,
@@ -200,16 +304,58 @@ function Folders() {
                 );
 
 
-                setFolders(
-                    (currentFolders) => [
-                        ...currentFolders,
-                        response.data,
-                    ]
+                console.log(
+                    "Réponse création :",
+                    response.data
                 );
+
+
+                const newFolder =
+                    response.data?.data ||
+                    response.data?.folder ||
+                    response.data;
+
+
+                if (
+                    newFolder &&
+                    typeof newFolder === "object" &&
+                    !Array.isArray(newFolder)
+                ) {
+
+                    setFolders(
+                        (currentFolders) => {
+
+                            if (
+                                !Array.isArray(
+                                    currentFolders
+                                )
+                            ) {
+                                return [
+                                    newFolder,
+                                ];
+                            }
+
+
+                            return [
+                                ...currentFolders,
+                                newFolder,
+                            ];
+                        }
+                    );
+
+                } else {
+
+                    // Si le format retourné est inattendu,
+                    // on recharge depuis Laravel.
+
+                    await getFolders();
+                }
             }
 
 
-            // Fermer la fenêtre
+            // =========================
+            // FERMER MODAL
+            // =========================
 
             setShowModal(false);
 
@@ -222,11 +368,27 @@ function Folders() {
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur sauvegarde dossier :",
+                error
+            );
+
+
+            if (error.response?.status === 401) {
+
+                localStorage.removeItem("token");
+
+                localStorage.removeItem("user");
+
+                navigate("/login");
+
+                return;
+            }
+
 
             setError(
                 error.response?.data?.message ||
-                "Une erreur est survenue."
+                "Une erreur est survenue lors de l'enregistrement."
             );
 
         } finally {
@@ -256,6 +418,9 @@ function Folders() {
 
         try {
 
+            setError("");
+
+
             const token =
                 localStorage.getItem("token");
 
@@ -274,17 +439,44 @@ function Folders() {
 
 
             setFolders(
-                (currentFolders) =>
-                    currentFolders.filter(
+                (currentFolders) => {
+
+                    if (
+                        !Array.isArray(
+                            currentFolders
+                        )
+                    ) {
+                        return [];
+                    }
+
+
+                    return currentFolders.filter(
                         (item) =>
                             item.id !== folder.id
-                    )
+                    );
+                }
             );
 
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur suppression dossier :",
+                error
+            );
+
+
+            if (error.response?.status === 401) {
+
+                localStorage.removeItem("token");
+
+                localStorage.removeItem("user");
+
+                navigate("/login");
+
+                return;
+            }
+
 
             setError(
                 error.response?.data?.message ||
@@ -292,6 +484,36 @@ function Folders() {
             );
         }
     };
+
+
+    // =====================================
+    // FERMER MODAL
+    // =====================================
+
+    const closeModal = () => {
+
+        if (creating) {
+            return;
+        }
+
+        setShowModal(false);
+
+        setFolderName("");
+
+        setParentId("");
+
+        setEditingFolder(null);
+    };
+
+
+    // =====================================
+    // LISTE SÉCURISÉE DES DOSSIERS
+    // =====================================
+
+    const safeFolders =
+        Array.isArray(folders)
+            ? folders
+            : [];
 
 
     // =====================================
@@ -361,7 +583,7 @@ function Folders() {
 
 
                     {!loading &&
-                        folders.length === 0 && (
+                        safeFolders.length === 0 && (
 
                             <div className="empty-folders">
 
@@ -385,11 +607,11 @@ function Folders() {
 
 
                     {!loading &&
-                        folders.length > 0 && (
+                        safeFolders.length > 0 && (
 
                             <div className="folders-grid">
 
-                                {folders.map(
+                                {safeFolders.map(
                                     (folder) => (
 
                                         <div
@@ -408,10 +630,12 @@ function Folders() {
                                                     {folder.name}
                                                 </h3>
 
+
                                                 <p>
                                                     Dossier #
                                                     {folder.id}
                                                 </p>
+
 
                                                 {folder.parent_id && (
 
@@ -472,8 +696,8 @@ function Folders() {
 
                     <div
                         className="modal-overlay"
-                        onClick={() =>
-                            setShowModal(false)
+                        onClick={
+                            closeModal
                         }
                     >
 
@@ -484,6 +708,8 @@ function Folders() {
                             }
                         >
 
+
+                            {/* MODAL HEADER */}
 
                             <div className="modal-header">
 
@@ -498,15 +724,18 @@ function Folders() {
 
                                 <button
                                     className="modal-close"
-                                    onClick={() =>
-                                        setShowModal(false)
+                                    onClick={
+                                        closeModal
                                     }
+                                    disabled={creating}
                                 >
                                     ×
                                 </button>
 
                             </div>
 
+
+                            {/* FORM */}
 
                             <form
                                 onSubmit={
@@ -523,6 +752,7 @@ function Folders() {
                                         Nom du dossier
                                     </label>
 
+
                                     <input
                                         type="text"
                                         value={
@@ -535,6 +765,9 @@ function Folders() {
                                                 )
                                         }
                                         placeholder="Ex: Contrats"
+                                        disabled={
+                                            creating
+                                        }
                                         required
                                     />
 
@@ -560,6 +793,9 @@ function Folders() {
                                                     event.target.value
                                                 )
                                         }
+                                        disabled={
+                                            creating
+                                        }
                                     >
 
                                         <option value="">
@@ -567,7 +803,7 @@ function Folders() {
                                         </option>
 
 
-                                        {folders
+                                        {safeFolders
                                             .filter(
                                                 (folder) =>
                                                     !editingFolder ||
@@ -603,10 +839,11 @@ function Folders() {
                                     <button
                                         type="button"
                                         className="cancel-button"
-                                        onClick={() =>
-                                            setShowModal(
-                                                false
-                                            )
+                                        onClick={
+                                            closeModal
+                                        }
+                                        disabled={
+                                            creating
                                         }
                                     >
                                         Annuler
@@ -617,19 +854,25 @@ function Folders() {
                                         type="submit"
                                         className="create-button"
                                         disabled={
-                                            creating
+                                            creating ||
+                                            !folderName.trim()
                                         }
                                     >
 
                                         {creating
+
                                             ? "Enregistrement..."
+
                                             : editingFolder
+
                                                 ? "Enregistrer"
+
                                                 : "Créer le dossier"}
 
                                     </button>
 
                                 </div>
+
 
                             </form>
 
@@ -646,4 +889,3 @@ function Folders() {
 }
 
 export default Folders;
-

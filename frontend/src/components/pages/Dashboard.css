@@ -410,6 +410,11 @@
 }
 
 
+/* =========================
+   MOBILE — la sidebar devient un tiroir,
+   donc le contenu principal reprend toute la largeur
+========================= */
+
 @media (max-width: 600px) {
 
     .user-dashboard-main {

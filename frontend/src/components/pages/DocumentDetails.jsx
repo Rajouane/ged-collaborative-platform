@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar.jsx";
 import "./DocumentDetails.css";
 
 export default function DocumentDetails() {
+
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -13,32 +14,51 @@ export default function DocumentDetails() {
     const [error, setError] = useState("");
 
     useEffect(() => {
+
         loadDocument();
+
     }, [id]);
 
+
     const loadDocument = async () => {
+
         try {
+
             setLoading(true);
             setError("");
 
-            const response = await api.get(`/documents/${id}`);
+            const response =
+                await api.get(`/documents/${id}`);
 
-            const data = response.data;
+            const data =
+                response.data;
 
-            setDocument(data?.data || data);
+            setDocument(
+                data?.data || data
+            );
+
         } catch (err) {
-            console.error("Erreur document :", err);
+
+            console.error(
+                "Erreur document :",
+                err
+            );
 
             setError(
                 err.response?.data?.message ||
                 "Impossible de récupérer les informations du document."
             );
+
         } finally {
+
             setLoading(false);
+
         }
     };
 
+
     const getFileName = () => {
+
         return (
             document?.file_name ||
             document?.filename ||
@@ -47,14 +67,18 @@ export default function DocumentDetails() {
         );
     };
 
+
     const getFileType = () => {
+
         const type = (
             document?.file_type ||
             document?.mime_type ||
             ""
         ).toLowerCase();
 
-        const name = getFileName().toLowerCase();
+        const name =
+            getFileName().toLowerCase();
+
 
         if (
             type.includes("pdf") ||
@@ -62,6 +86,7 @@ export default function DocumentDetails() {
         ) {
             return "PDF";
         }
+
 
         if (
             type.includes("word") ||
@@ -72,6 +97,7 @@ export default function DocumentDetails() {
             return "WORD";
         }
 
+
         if (
             type.includes("excel") ||
             type.includes("sheet") ||
@@ -81,6 +107,7 @@ export default function DocumentDetails() {
             return "EXCEL";
         }
 
+
         if (
             type.includes("powerpoint") ||
             type.includes("presentation") ||
@@ -89,6 +116,7 @@ export default function DocumentDetails() {
         ) {
             return "POWERPOINT";
         }
+
 
         if (
             type.includes("image") ||
@@ -100,6 +128,7 @@ export default function DocumentDetails() {
             return "IMAGE";
         }
 
+
         if (
             type.includes("zip") ||
             name.endsWith(".zip") ||
@@ -108,13 +137,15 @@ export default function DocumentDetails() {
             return "ARCHIVE";
         }
 
+
         return "FICHIER";
     };
 
-    const getFileIcon = () => {
-        const type = getFileType();
 
-        switch (type) {
+    const getFileIcon = () => {
+
+        switch (getFileType()) {
+
             case "PDF":
                 return "📕";
 
@@ -138,12 +169,15 @@ export default function DocumentDetails() {
         }
     };
 
+
     const formatSize = (size) => {
+
         if (!size) {
             return "-";
         }
 
-        const bytes = Number(size);
+        const bytes =
+            Number(size);
 
         if (Number.isNaN(bytes)) {
             return size;
@@ -154,10 +188,15 @@ export default function DocumentDetails() {
         }
 
         if (bytes < 1024 * 1024) {
-            return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${(
+                bytes / 1024
+            ).toFixed(1)} KB`;
         }
 
-        if (bytes < 1024 * 1024 * 1024) {
+        if (
+            bytes <
+            1024 * 1024 * 1024
+        ) {
             return `${(
                 bytes /
                 (1024 * 1024)
@@ -170,25 +209,37 @@ export default function DocumentDetails() {
         ).toFixed(1)} GB`;
     };
 
+
     const formatDate = (date) => {
+
         if (!date) {
             return "-";
         }
 
-        const value = new Date(date);
+        const value =
+            new Date(date);
 
-        if (Number.isNaN(value.getTime())) {
+        if (
+            Number.isNaN(
+                value.getTime()
+            )
+        ) {
             return "-";
         }
 
-        return value.toLocaleDateString("fr-FR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        });
+        return value.toLocaleDateString(
+            "fr-FR",
+            {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+            }
+        );
     };
 
+
     const getAuthor = () => {
+
         if (!document?.user) {
             return "Inconnu";
         }
@@ -197,112 +248,181 @@ export default function DocumentDetails() {
             `${document.user.first_name || ""} ${
                 document.user.last_name || ""
             }`.trim() ||
+
             document.user.name ||
+
             document.user.email ||
+
             "Inconnu"
         );
     };
 
-    const getFileUrl = () => {
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL PREVIEW
+    |--------------------------------------------------------------------------
+    */
+
+    const getPreviewUrl = () => {
+
         return (
-            document?.file_url ||
-            document?.url ||
-            document?.file_path ||
-            document?.path ||
-            null
+            `http://127.0.0.1:8000/api/documents/${id}/preview`
         );
     };
 
-    const handleOpen = () => {
-        const url = getFileUrl();
 
-        if (!url) {
-            setError(
-                "Le fichier n'est pas disponible."
+    /*
+    |--------------------------------------------------------------------------
+    | URL DOWNLOAD
+    |--------------------------------------------------------------------------
+    */
+
+    const getDownloadUrl = () => {
+
+        return (
+            `http://127.0.0.1:8000/api/documents/${id}/download`
+        );
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | OUVRIR
+    |--------------------------------------------------------------------------
+    |
+    | PDF + IMAGE :
+    | ouvre directement dans Chrome.
+    |
+    | WORD / EXCEL / POWERPOINT :
+    | Chrome ne sait pas les afficher nativement.
+    | On les télécharge.
+    |
+    */
+
+    const handleOpen = () => {
+
+        setError("");
+
+        const type =
+            getFileType();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fichiers affichables
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            type === "PDF" ||
+            type === "IMAGE"
+        ) {
+
+            window.open(
+                getPreviewUrl(),
+                "_blank",
+                "noopener,noreferrer"
             );
+
             return;
         }
 
-        let finalUrl = url;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Office
+        |--------------------------------------------------------------------------
+        */
 
         if (
-            !url.startsWith("http://") &&
-            !url.startsWith("https://")
+            type === "WORD" ||
+            type === "EXCEL" ||
+            type === "POWERPOINT"
         ) {
-            finalUrl = `http://127.0.0.1:8000/storage/${url
-                .replace(/^storage\//, "")
-                .replace(/^\/+/, "")}`;
-        }
-
-        window.open(
-            finalUrl,
-            "_blank",
-            "noopener,noreferrer"
-        );
-    };
-
-    const handleDownload = async () => {
-        try {
-            setError("");
-
-            const response = await api.get(
-                `/documents/${id}/download`,
-                {
-                    responseType: "blob",
-                }
-            );
-
-            const blob = new Blob([
-                response.data,
-            ]);
-
-            const url =
-                window.URL.createObjectURL(blob);
-
-            const link =
-                document.createElement("a");
-
-            link.href = url;
-            link.download = getFileName();
-
-            document.body.appendChild(link);
-
-            link.click();
-
-            link.remove();
-
-            window.URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error(
-                "Erreur téléchargement :",
-                err
-            );
 
             setError(
-                err.response?.data?.message ||
-                "Impossible de télécharger le fichier."
+                "Ce fichier Office ne peut pas être affiché directement dans Chrome. Utilisez « Télécharger » pour l'ouvrir avec Microsoft Office."
             );
+
+            return;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Autres fichiers
+        |--------------------------------------------------------------------------
+        */
+
+        setError(
+            "Ce type de fichier ne peut pas être affiché directement dans Chrome. Utilisez « Télécharger »."
+        );
     };
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOWNLOAD
+    |--------------------------------------------------------------------------
+    */
+
+    const handleDownload = () => {
+
+        setError("");
+
+        const url =
+            getDownloadUrl();
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.target = "_blank";
+
+        link.rel =
+            "noopener noreferrer";
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE
+    |--------------------------------------------------------------------------
+    */
+
     const handleDelete = async () => {
-        const confirmed = window.confirm(
-            "Voulez-vous vraiment supprimer ce document ?"
-        );
+
+        const confirmed =
+            window.confirm(
+                "Voulez-vous vraiment supprimer ce document ?"
+            );
 
         if (!confirmed) {
             return;
         }
 
         try {
+
             setError("");
 
             await api.delete(
                 `/documents/${id}`
             );
 
-            navigate("/documents");
+            navigate(
+                "/documents"
+            );
+
         } catch (err) {
+
             console.error(
                 "Erreur suppression :",
                 err
@@ -315,23 +435,46 @@ export default function DocumentDetails() {
         }
     };
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOADING
+    |--------------------------------------------------------------------------
+    */
+
     if (loading) {
+
         return (
             <div className="dashboard-layout">
+
                 <Sidebar />
 
                 <main className="document-details-main">
+
                     <div className="document-details-loading">
+
                         Chargement du document...
+
                     </div>
+
                 </main>
+
             </div>
         );
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOCUMENT NOT FOUND
+    |--------------------------------------------------------------------------
+    */
+
     if (!document) {
+
         return (
             <div className="dashboard-layout">
+
                 <Sidebar />
 
                 <main className="document-details-main">
@@ -339,21 +482,33 @@ export default function DocumentDetails() {
                     <button
                         className="document-back-button"
                         onClick={() =>
-                            navigate("/documents")
+                            navigate(
+                                "/documents"
+                            )
                         }
                     >
                         ← Retour aux documents
                     </button>
 
                     <div className="document-details-error">
+
                         {error ||
                             "Document introuvable."}
+
                     </div>
 
                 </main>
+
             </div>
         );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGE
+    |--------------------------------------------------------------------------
+    */
 
     return (
         <div className="dashboard-layout">
@@ -369,7 +524,9 @@ export default function DocumentDetails() {
                         <button
                             className="document-back-button"
                             onClick={() =>
-                                navigate("/documents")
+                                navigate(
+                                    "/documents"
+                                )
                             }
                         >
                             ← Retour aux documents
@@ -381,46 +538,67 @@ export default function DocumentDetails() {
 
                     </div>
 
+
                     <button
                         className="document-delete-top-button"
-                        onClick={handleDelete}
+                        onClick={
+                            handleDelete
+                        }
                     >
                         🗑 Supprimer
                     </button>
 
                 </header>
 
+
                 {error && (
+
                     <div className="document-details-error">
+
                         {error}
+
                     </div>
+
                 )}
+
 
                 <section className="document-preview-card">
 
                     <div className="document-preview-icon">
+
                         {getFileIcon()}
+
                     </div>
+
 
                     <div className="document-preview-content">
 
                         <div className="document-preview-type">
+
                             {getFileType()}
+
                         </div>
 
+
                         <h2>
+
                             {document.title ||
                                 "Document sans titre"}
+
                         </h2>
 
+
                         <p>
+
                             {document.description ||
                                 "Aucune description disponible pour ce document."}
+
                         </p>
 
                     </div>
 
                 </section>
+
 
                 <section className="document-action-card">
 
@@ -431,6 +609,7 @@ export default function DocumentDetails() {
                         </span>
 
                         <div>
+
                             <h2>
                                 ACTIONS
                             </h2>
@@ -438,30 +617,39 @@ export default function DocumentDetails() {
                             <p>
                                 Gestion du document
                             </p>
+
                         </div>
 
                     </div>
 
+
                     <p className="document-action-description">
-                        Ouvrez le fichier ou
-                        téléchargez-le sur votre
-                        ordinateur.
+
+                        Ouvrez le fichier ou téléchargez-le
+                        sur votre ordinateur.
+
                     </p>
+
 
                     <div className="document-action-buttons">
 
                         <button
                             type="button"
                             className="document-open-button"
-                            onClick={handleOpen}
+                            onClick={
+                                handleOpen
+                            }
                         >
                             ↗ Ouvrir
                         </button>
 
+
                         <button
                             type="button"
                             className="document-download-button"
-                            onClick={handleDownload}
+                            onClick={
+                                handleDownload
+                            }
                         >
                             ↓ Télécharger
                         </button>
@@ -469,6 +657,7 @@ export default function DocumentDetails() {
                     </div>
 
                 </section>
+
 
                 <section className="document-info-card">
 
@@ -479,6 +668,7 @@ export default function DocumentDetails() {
                         </span>
 
                         <div>
+
                             <h2>
                                 INFORMATIONS
                             </h2>
@@ -486,9 +676,11 @@ export default function DocumentDetails() {
                             <p>
                                 Informations détaillées
                             </p>
+
                         </div>
 
                     </div>
+
 
                     <div className="document-info-grid">
 
@@ -504,6 +696,7 @@ export default function DocumentDetails() {
 
                         </div>
 
+
                         <div className="document-info-item">
 
                             <span>
@@ -515,6 +708,7 @@ export default function DocumentDetails() {
                             </strong>
 
                         </div>
+
 
                         <div className="document-info-item">
 
@@ -531,6 +725,7 @@ export default function DocumentDetails() {
 
                         </div>
 
+
                         <div className="document-info-item">
 
                             <span>
@@ -542,6 +737,7 @@ export default function DocumentDetails() {
                             </strong>
 
                         </div>
+
 
                         <div className="document-info-item">
 
@@ -557,6 +753,7 @@ export default function DocumentDetails() {
 
                         </div>
 
+
                         <div className="document-info-item">
 
                             <span>
@@ -570,6 +767,7 @@ export default function DocumentDetails() {
                             </strong>
 
                         </div>
+
 
                         <div className="document-info-item">
 
@@ -585,7 +783,9 @@ export default function DocumentDetails() {
 
                         </div>
 
+
                         {document.updated_at && (
+
                             <div className="document-info-item">
 
                                 <span>
@@ -599,6 +799,7 @@ export default function DocumentDetails() {
                                 </strong>
 
                             </div>
+
                         )}
 
                     </div>
