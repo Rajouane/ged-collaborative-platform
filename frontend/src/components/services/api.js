@@ -1,7 +1,7 @@
-
 import axios from "axios";
 
-const API_URL = import.meta.env.DEV
+const API_URL = window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:8000/api"
     : "https://otmane-ged.infinityfreeapp.com/api";
 
@@ -42,4 +42,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
