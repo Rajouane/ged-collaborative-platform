@@ -1,14 +1,16 @@
 
 import axios from "axios";
 
-const api = axios.create({
-    baseURL: "https://otmane-ged.infinityfreeapp.com/api",
+const API_URL = import.meta.env.DEV
+    ? "http://127.0.0.1:8000/api"
+    : "https://otmane-ged.infinityfreeapp.com/api";
 
+const api = axios.create({
+    baseURL: API_URL,
     headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
     },
-
     timeout: 30000,
 });
 
@@ -23,7 +25,6 @@ api.interceptors.request.use(
 
         return config;
     },
-
     (error) => {
         return Promise.reject(error);
     }
@@ -31,7 +32,6 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
     (response) => response,
-
     (error) => {
         if (error.response?.status === 401) {
             console.warn("Session API non authentifiée.");
