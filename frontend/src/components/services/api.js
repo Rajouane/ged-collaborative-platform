@@ -1,7 +1,8 @@
+
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://127.0.0.1:8000/api",
+    baseURL: "https://otmane-ged.infinityfreeapp.com/api",
 
     headers: {
         Accept: "application/json",
@@ -13,17 +14,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-
-        const token =
-            localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
         if (token) {
-
-            config.headers =
-                config.headers || {};
-
-            config.headers.Authorization =
-                `Bearer ${token}`;
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
         }
 
         return config;
@@ -38,22 +33,8 @@ api.interceptors.response.use(
     (response) => response,
 
     (error) => {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Ne pas rediriger automatiquement vers /login
-        |--------------------------------------------------------------------------
-        |
-        | Cela évite les problèmes avec les réponses 401/404
-        | pendant le développement.
-        |
-        */
-
         if (error.response?.status === 401) {
-
-            console.warn(
-                "Session API non authentifiée."
-            );
+            console.warn("Session API non authentifiée.");
         }
 
         return Promise.reject(error);
@@ -61,3 +42,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+
