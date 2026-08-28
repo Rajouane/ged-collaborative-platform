@@ -504,23 +504,35 @@
     line-height: 1.6;
 }
 
-.admin-action-content a {
+/* NOTE: the dashboard uses <button> elements here, not <a> —
+   styling both keeps this correct regardless of which is used. */
+.admin-action-content a,
+.admin-action-content button {
     display: inline-flex;
     align-items: center;
     gap: 5px;
 
-    color: #2563eb;
+    padding: 0;
 
+    color: #2563eb;
+    background: none;
+
+    border: none;
+
+    font-family: inherit;
     font-size: 12px;
     font-weight: 700;
 
     text-decoration: none;
+    cursor: pointer;
 
-    transition: gap 0.2s ease;
+    transition: gap 0.2s ease, color 0.2s ease;
 }
 
-.admin-action-content a:hover {
+.admin-action-content a:hover,
+.admin-action-content button:hover {
     gap: 9px;
+    color: #1d4ed8;
     text-decoration: none;
 }
 
@@ -635,6 +647,18 @@
 
 
 /* =====================================================
+   FOCUS STATES (accessibility)
+===================================================== */
+
+.admin-action-content button:focus-visible,
+.admin-profile:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+
+/* =====================================================
    RESPONSIVE — TABLET
 ===================================================== */
 
@@ -730,5 +754,21 @@
 
     .admin-activity-item time {
         display: none;
+    }
+}
+
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-profile,
+    .admin-stat-card,
+    .admin-action-card,
+    .admin-activity-item,
+    .admin-action-content a,
+    .admin-action-content button {
+        transition: none;
     }
 }

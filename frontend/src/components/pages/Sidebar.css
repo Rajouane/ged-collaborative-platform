@@ -1,7 +1,6 @@
+
 /* =========================================================
-   TOKENS
-   Palette pensée pour rester lisible en usage pro (GED/2M),
-   avec un accent inspiré du logo (corail + sarcelle)
+   SIDEBAR — DESIGN
 ========================================================= */
 
 .sidebar {
@@ -15,34 +14,53 @@
 
     --sb-accent: #FF6A47;
     --sb-accent-soft: rgba(255, 106, 71, 0.12);
+
     --sb-accent-2: #2FD3C7;
 
     --sb-danger: #FF6B6B;
     --sb-danger-soft: rgba(255, 107, 107, 0.10);
 
-    display: flex;
-    flex-direction: column;
-
     position: fixed;
+
     top: 0;
     left: 0;
+
     z-index: 1000;
 
     width: 280px;
     height: 100vh;
     min-height: 100vh;
 
+    display: flex;
+    flex-direction: column;
+
     background: var(--sb-bg);
     color: var(--sb-text);
 
-    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family:
+        "Inter",
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        sans-serif;
 
     box-sizing: border-box;
+
+    transition: width 0.25s ease;
 }
 
 
 /* =========================================================
-   LOGO 2M
+   SIDEBAR COLLAPSED
+========================================================= */
+
+.sidebar.sidebar-collapsed {
+    width: 76px;
+}
+
+
+/* =========================================================
+   LOGO
 ========================================================= */
 
 .sidebar-brand {
@@ -59,10 +77,9 @@
     box-sizing: border-box;
 
     border-bottom: 1px solid var(--sb-border);
+
+    overflow: hidden;
 }
-
-
-/* Halo ovale ajusté à la forme du logo */
 
 .sidebar-brand::before {
     content: "";
@@ -75,7 +92,7 @@
     width: 140px;
     height: 62px;
 
-    transform: translate(-50%, 0);
+    transform: translateX(-50%);
 
     background: radial-gradient(
         ellipse,
@@ -89,7 +106,6 @@
     pointer-events: none;
 }
 
-
 .sidebar-logo-image {
     position: relative;
 
@@ -101,11 +117,78 @@
     object-fit: contain;
 
     background: transparent;
+
+    transition:
+        width 0.25s ease,
+        transform 0.25s ease;
 }
 
 
 /* =========================================================
-   NAVIGATION TITLE
+   LOGO — SIDEBAR FERMÉE
+========================================================= */
+
+.sidebar.sidebar-collapsed .sidebar-logo-image {
+    width: 48px;
+}
+
+
+/* =========================================================
+   BOUTON FLÈCHE
+========================================================= */
+
+.sidebar-collapse-btn {
+    position: absolute;
+
+    top: 88px;
+    right: -12px;
+
+    z-index: 1100;
+
+    width: 24px;
+    height: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 50%;
+
+    background: #171A22;
+
+    color: #C9CDD4;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.35);
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    background: var(--sb-accent);
+
+    color: #fff;
+
+    transform: scale(1.08);
+}
+
+.sidebar-collapse-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+
+/* =========================================================
+   TITRE NAVIGATION
 ========================================================= */
 
 .sidebar-section-title {
@@ -122,6 +205,29 @@
     letter-spacing: 1.6px;
 
     text-transform: uppercase;
+
+    white-space: nowrap;
+
+    transition:
+        opacity 0.15s ease,
+        visibility 0.15s ease;
+}
+
+
+/* =========================================================
+   TITRE — SIDEBAR FERMÉE
+========================================================= */
+
+.sidebar.sidebar-collapsed .sidebar-section-title {
+    opacity: 0;
+
+    visibility: hidden;
+
+    height: 0;
+
+    margin: 0;
+
+    padding: 0;
 }
 
 
@@ -145,7 +251,7 @@
 
 
 /* =========================================================
-   NAVIGATION LINK
+   LIENS
 ========================================================= */
 
 .sidebar-link {
@@ -181,12 +287,27 @@
 
     transition:
         background 0.16s ease,
-        color 0.16s ease;
+        color 0.16s ease,
+        padding 0.25s ease,
+        justify-content 0.25s ease;
 }
 
 
 /* =========================================================
-   BARRE D'ACCENT
+   LIENS — SIDEBAR FERMÉE
+========================================================= */
+
+.sidebar.sidebar-collapsed .sidebar-link {
+    justify-content: center;
+
+    padding: 0;
+
+    gap: 0;
+}
+
+
+/* =========================================================
+   BARRE ACTIVE
 ========================================================= */
 
 .sidebar-link::before {
@@ -214,6 +335,10 @@
     transition: opacity 0.16s ease;
 }
 
+.sidebar-link.active::before {
+    opacity: 1;
+}
+
 
 /* =========================================================
    HOVER
@@ -238,19 +363,13 @@
     font-weight: 600;
 }
 
-
-.sidebar-link.active::before {
-    opacity: 1;
-}
-
-
 .sidebar-link.active .sidebar-icon {
     color: var(--sb-accent);
 }
 
 
 /* =========================================================
-   ICON
+   ICÔNES
 ========================================================= */
 
 .sidebar-icon {
@@ -265,8 +384,11 @@
     justify-content: center;
 
     color: inherit;
-}
 
+    transition:
+        transform 0.2s ease,
+        color 0.2s ease;
+}
 
 .sidebar-icon svg {
     width: 100%;
@@ -275,7 +397,7 @@
 
 
 /* =========================================================
-   TEXT
+   TEXTE
 ========================================================= */
 
 .sidebar-link-text {
@@ -284,14 +406,74 @@
     text-overflow: ellipsis;
 
     white-space: nowrap;
+
+    transition:
+        opacity 0.15s ease,
+        width 0.2s ease;
 }
 
 
 /* =========================================================
-   PETIT ESPACE AVANT DÉCONNEXION
-   IMPORTANT :
-   Pas de flex: 1 ici.
-   Cela évite le grand espace vide.
+   TEXTE — SIDEBAR FERMÉE
+========================================================= */
+
+.sidebar.sidebar-collapsed .sidebar-link-text {
+    width: 0;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
+
+.notification-icon-wrapper {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+
+    top: -7px;
+    right: -8px;
+
+    min-width: 17px;
+    height: 17px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 4px;
+
+    box-sizing: border-box;
+
+    border-radius: 999px;
+
+    background: #FF4D4F;
+
+    color: #FFFFFF;
+
+    border: 2px solid #0C0E13;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    z-index: 5;
+}
+
+
+/* =========================================================
+   ESPACE
 ========================================================= */
 
 .sidebar-spacer {
@@ -354,13 +536,29 @@
         color 0.16s ease;
 }
 
-
 .sidebar-logout:hover {
     background: var(--sb-danger-soft);
 
     color: var(--sb-danger);
 }
 
+
+/* =========================================================
+   LOGOUT — SIDEBAR FERMÉE
+========================================================= */
+
+.sidebar.sidebar-collapsed .sidebar-logout {
+    justify-content: center;
+
+    padding: 0;
+
+    gap: 0;
+}
+
+
+/* =========================================================
+   LOGOUT ICON
+========================================================= */
 
 .sidebar-logout-icon {
     width: 20px;
@@ -376,7 +574,6 @@
     color: inherit;
 }
 
-
 .sidebar-logout-icon svg {
     width: 100%;
     height: 100%;
@@ -384,53 +581,11 @@
 
 
 /* =========================================================
-   NOTIFICATION ICON WRAPPER
+   LOGOUT TEXT — SIDEBAR FERMÉE
 ========================================================= */
 
-.notification-icon-wrapper {
-    position: relative;
-}
-
-
-/* =========================================================
-   NOTIFICATION BADGE
-========================================================= */
-
-.notification-badge {
-    position: absolute;
-
-    top: -7px;
-    right: -8px;
-
-    min-width: 17px;
-    height: 17px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 4px;
-
-    box-sizing: border-box;
-
-    border-radius: 999px;
-
-    background: #FF4D4F;
-
-    color: #FFFFFF;
-
-    border: 2px solid #0C0E13;
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    line-height: 1;
-
-    white-space: nowrap;
-
-    z-index: 5;
+.sidebar.sidebar-collapsed .sidebar-logout > span:last-child {
+    display: none;
 }
 
 
@@ -442,11 +597,9 @@
     width: 4px;
 }
 
-
 .sidebar-menu::-webkit-scrollbar-track {
     background: transparent;
 }
-
 
 .sidebar-menu::-webkit-scrollbar-thumb {
     background: #262B36;
@@ -456,80 +609,117 @@
 
 
 /* =========================================================
-   RESPONSIVE — DESKTOP / TABLETTE
-   (inchangé : la sidebar reste visible, juste plus étroite)
-========================================================= */
-
-@media (max-width: 1000px) {
-
-    .sidebar {
-        width: 240px;
-    }
-
-    .sidebar-brand {
-        padding: 14px 0 12px;
-    }
-
-    .sidebar-brand::before {
-        width: 120px;
-        height: 54px;
-
-        top: 12px;
-    }
-
-    .sidebar-logo-image {
-        width: 100px;
-    }
-}
-
-
-/* =========================================================
-   MOBILE — MENU TIROIR (OFF-CANVAS)
-   En dessous de 768px, la sidebar sort de la mise en page
-   (position: fixed) et reste cachée hors-écran par défaut.
-   L'ajout de la classe .sidebar-open la fait glisser à
-   l'écran. Le style visuel (couleurs, espacements) est
-   repris tel quel du bloc "700px" existant.
+   MOBILE
 ========================================================= */
 
 @media (max-width: 700px) {
 
     .sidebar {
         width: 75vw;
+
         max-width: 260px;
+
         min-width: 200px;
 
         transform: translateX(-100%);
 
-        transition: transform 0.25s ease;
-
-        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
+        transition:
+            transform 0.25s ease;
+        
+        box-shadow:
+            8px 0 24px rgba(0, 0, 0, 0.35);
     }
+
 
     .sidebar.sidebar-open {
         transform: translateX(0);
     }
 
+
+    /* Pas de mode réduit sur mobile */
+
+    .sidebar.sidebar-collapsed {
+        width: 75vw;
+
+        max-width: 260px;
+    }
+
+
+    .sidebar.sidebar-collapsed .sidebar-section-title {
+        opacity: 1;
+
+        visibility: visible;
+
+        height: auto;
+
+        margin: 18px 0 10px;
+
+        padding: 0 18px;
+    }
+
+
+    .sidebar.sidebar-collapsed .sidebar-link {
+        justify-content: flex-start;
+
+        padding: 0 12px 0 14px;
+
+        gap: 12px;
+    }
+
+
+    .sidebar.sidebar-collapsed .sidebar-link-text {
+        width: auto;
+
+        opacity: 1;
+
+        pointer-events: auto;
+    }
+
+
+    .sidebar.sidebar-collapsed .sidebar-logout {
+        justify-content: flex-start;
+
+        padding: 0 12px 0 14px;
+
+        gap: 12px;
+    }
+
+
+    .sidebar.sidebar-collapsed .sidebar-logout > span:last-child {
+        display: inline;
+    }
+
+
+    .sidebar-collapse-btn {
+        display: none;
+    }
+
+
     .sidebar-brand {
         padding: 12px 0 10px;
     }
 
+
     .sidebar-brand::before {
         width: 100px;
+
         height: 46px;
 
         top: 10px;
     }
 
+
     .sidebar-logo-image {
         width: 84px;
     }
+
 
     .sidebar-section-title {
         padding-left: 18px;
 
         font-size: 10px;
     }
+
 
     .sidebar-link,
     .sidebar-logout {
@@ -542,21 +732,26 @@
         font-size: 14px;
     }
 
+
     .sidebar-icon,
     .sidebar-logout-icon {
         width: 19px;
         height: 19px;
     }
 
+
     .notification-badge {
         top: -6px;
+
         right: -7px;
 
         min-width: 16px;
+
         height: 16px;
 
         font-size: 8px;
     }
+
 
     .sidebar-spacer {
         height: 12px;
@@ -565,7 +760,7 @@
 
 
 /* =========================================================
-   OVERLAY (assombrit le contenu derrière le tiroir ouvert)
+   OVERLAY MOBILE
 ========================================================= */
 
 .sidebar-overlay {
@@ -578,6 +773,7 @@
         display: block;
 
         position: fixed;
+
         inset: 0;
 
         background: rgba(0, 0, 0, 0.45);
@@ -588,7 +784,7 @@
 
 
 /* =========================================================
-   BOUTON HAMBURGER (visible uniquement en mobile)
+   HAMBURGER MOBILE
 ========================================================= */
 
 .sidebar-toggle-btn {
@@ -599,37 +795,44 @@
 
     .sidebar-toggle-btn {
         display: flex;
+
         align-items: center;
         justify-content: center;
 
         position: fixed;
+
         top: 16px;
         left: 16px;
+
         z-index: 1001;
 
         width: 42px;
         height: 42px;
 
         border: 0;
+
         border-radius: 10px;
 
         background: #0C0E13;
-        color: #F5F6F8;
 
-        font-size: 18px;
+        color: #F5F6F8;
 
         cursor: pointer;
 
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        box-shadow:
+            0 4px 14px rgba(0, 0, 0, 0.25);
     }
+
 
     .sidebar-toggle-btn svg {
         width: 20px;
+
         height: 20px;
     }
 
-    /* Empêche le contenu d'être caché sous le bouton flottant */
+
     .user-dashboard-main {
         padding-top: 70px;
     }
 }
+

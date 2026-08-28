@@ -4,6 +4,60 @@ import api from "../services/api";
 import "./Documents.css";
 import Sidebar from "./Sidebar.jsx";
 
+
+// =====================================================
+// ICONS — small line icons, no external dependency
+// =====================================================
+
+const ip = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+};
+
+const IconSearch = () => (
+    <svg {...ip}><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></svg>
+);
+
+const IconTrash = () => (
+    <svg {...ip}>
+        <path d="M4.5 6.5h15" />
+        <path d="M9 6.5V4.8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.7" />
+        <path d="M6.5 6.5l1 13a1 1 0 0 0 1 .9h7a1 1 0 0 0 1-.9l1-13" />
+        <path d="M10.2 10.5v6.3M13.8 10.5v6.3" />
+    </svg>
+);
+
+const IconPlus = () => (
+    <svg {...ip}><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+);
+
+const IconEye = () => (
+    <svg {...ip}>
+        <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+);
+
+const IconFileEmpty = () => (
+    <svg {...ip}>
+        <path d="M6.5 3.5h7l4 4v12a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z" />
+        <path d="M13.5 3.5v4h4" />
+    </svg>
+);
+
+const IconUpload = () => (
+    <svg {...ip}>
+        <path d="M12 15.5V4" />
+        <path d="M7.5 8.5L12 4l4.5 4.5" />
+        <path d="M4.5 15.5V18a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.5" />
+    </svg>
+);
+
+
 export default function Documents() {
     const navigate = useNavigate();
 
@@ -307,10 +361,11 @@ export default function Documents() {
     };
 
     /* =========================================================
-       FILE ICON
+       FILE META — one source of truth for the badge, the
+       type pill and the filter, so they always agree.
     ========================================================= */
 
-    const getFileIcon = (document) => {
+    const getFileMeta = (document) => {
         const type = (
             document.file_type ||
             document.mime_type ||
@@ -323,11 +378,8 @@ export default function Documents() {
             ""
         ).toLowerCase();
 
-        if (
-            type.includes("pdf") ||
-            name.endsWith(".pdf")
-        ) {
-            return "📕";
+        if (type.includes("pdf") || name.endsWith(".pdf")) {
+            return { key: "pdf", label: "PDF" };
         }
 
         if (
@@ -336,7 +388,7 @@ export default function Documents() {
             name.endsWith(".doc") ||
             name.endsWith(".docx")
         ) {
-            return "📘";
+            return { key: "word", label: "DOC" };
         }
 
         if (
@@ -345,7 +397,7 @@ export default function Documents() {
             name.endsWith(".xls") ||
             name.endsWith(".xlsx")
         ) {
-            return "📗";
+            return { key: "excel", label: "XLS" };
         }
 
         if (
@@ -355,7 +407,7 @@ export default function Documents() {
             name.endsWith(".png") ||
             name.endsWith(".webp")
         ) {
-            return "🖼️";
+            return { key: "image", label: "IMG" };
         }
 
         if (
@@ -363,65 +415,44 @@ export default function Documents() {
             name.endsWith(".zip") ||
             name.endsWith(".rar")
         ) {
-            return "🗜️";
+            return { key: "zip", label: "ZIP" };
         }
 
-        return "📄";
+        return { key: "file", label: "DOC" };
     };
 
     /* =========================================================
-       FILE TYPE
+       AUTHOR INITIALS
     ========================================================= */
 
-    const getFileType = (document) => {
-        const type = (
-            document.file_type ||
-            document.mime_type ||
-            ""
-        ).toLowerCase();
-
-        const name = (
-            document.file_name ||
-            document.filename ||
-            ""
-        ).toLowerCase();
-
-        if (
-            type.includes("pdf") ||
-            name.endsWith(".pdf")
-        ) {
-            return "PDF";
+    const getAuthorName = (document) => {
+        if (!document.user) {
+            return "Inconnu";
         }
 
-        if (
-            type.includes("word") ||
-            type.includes("document") ||
-            name.endsWith(".doc") ||
-            name.endsWith(".docx")
-        ) {
-            return "WORD";
+        const { user } = document;
+
+        return (
+            `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+            user.name ||
+            user.email ||
+            "Inconnu"
+        );
+    };
+
+    const getAuthorInitials = (name) => {
+        if (!name || name === "Inconnu") {
+            return "?";
         }
 
-        if (
-            type.includes("excel") ||
-            type.includes("sheet") ||
-            name.endsWith(".xls") ||
-            name.endsWith(".xlsx")
-        ) {
-            return "EXCEL";
-        }
+        const parts = name.trim().split(/\s+/);
 
-        if (
-            type.includes("image") ||
-            name.endsWith(".jpg") ||
-            name.endsWith(".jpeg") ||
-            name.endsWith(".png") ||
-            name.endsWith(".webp")
-        ) {
-            return "IMAGE";
-        }
+        const initials =
+            parts.length > 1
+                ? `${parts[0][0]}${parts[1][0]}`
+                : parts[0].slice(0, 2);
 
-        return "FICHIER";
+        return initials.toUpperCase();
     };
 
     /* =========================================================
@@ -519,12 +550,6 @@ export default function Documents() {
                 document.filename ||
                 "";
 
-            const fileType = (
-                document.file_type ||
-                document.mime_type ||
-                ""
-            ).toLowerCase();
-
             const text = `
                 ${title}
                 ${description}
@@ -537,60 +562,9 @@ export default function Documents() {
                 !search ||
                 text.includes(search);
 
-            const lowerFileName =
-                fileName.toLowerCase();
-
-            let matchesType =
-                typeFilter === "all";
-
-            if (typeFilter === "pdf") {
-                matchesType =
-                    fileType.includes("pdf") ||
-                    lowerFileName.endsWith(
-                        ".pdf"
-                    );
-            }
-
-            if (typeFilter === "word") {
-                matchesType =
-                    fileType.includes("word") ||
-                    fileType.includes("document") ||
-                    lowerFileName.endsWith(
-                        ".doc"
-                    ) ||
-                    lowerFileName.endsWith(
-                        ".docx"
-                    );
-            }
-
-            if (typeFilter === "excel") {
-                matchesType =
-                    fileType.includes("excel") ||
-                    fileType.includes("sheet") ||
-                    lowerFileName.endsWith(
-                        ".xls"
-                    ) ||
-                    lowerFileName.endsWith(
-                        ".xlsx"
-                    );
-            }
-
-            if (typeFilter === "image") {
-                matchesType =
-                    fileType.includes("image") ||
-                    lowerFileName.endsWith(
-                        ".jpg"
-                    ) ||
-                    lowerFileName.endsWith(
-                        ".jpeg"
-                    ) ||
-                    lowerFileName.endsWith(
-                        ".png"
-                    ) ||
-                    lowerFileName.endsWith(
-                        ".webp"
-                    );
-            }
+            const matchesType =
+                typeFilter === "all" ||
+                getFileMeta(document).key === typeFilter;
 
             return (
                 matchesSearch &&
@@ -635,9 +609,7 @@ export default function Documents() {
 
                         <div className="document-search">
 
-                            <span>
-                                🔍
-                            </span>
+                            <IconSearch />
 
                             <input
                                 type="text"
@@ -693,7 +665,7 @@ export default function Documents() {
                             className="trash-button"
                             onClick={handleTrash}
                         >
-                            <span>🗑️</span>
+                            <IconTrash />
                             Corbeille
                         </button>
 
@@ -706,7 +678,8 @@ export default function Documents() {
                                 openCreateModal
                             }
                         >
-                            + Nouveau document
+                            <IconPlus />
+                            Nouveau document
                         </button>
 
                     </div>
@@ -780,7 +753,7 @@ export default function Documents() {
                             <div className="empty-documents">
 
                                 <div className="empty-document-icon">
-                                    📄
+                                    <IconFileEmpty />
                                 </div>
 
                                 <h2>
@@ -807,7 +780,8 @@ export default function Documents() {
                                                 openCreateModal
                                             }
                                         >
-                                            + Ajouter un document
+                                            <IconPlus />
+                                            Ajouter un document
                                         </button>
                                     )}
 
@@ -868,7 +842,19 @@ export default function Documents() {
                                     <tbody>
 
                                         {filteredDocuments.map(
-                                            (document) => (
+                                            (document) => {
+
+                                                const meta =
+                                                    getFileMeta(
+                                                        document
+                                                    );
+
+                                                const authorName =
+                                                    getAuthorName(
+                                                        document
+                                                    );
+
+                                                return (
                                                 <tr
                                                     key={
                                                         document.id
@@ -879,10 +865,10 @@ export default function Documents() {
 
                                                         <div className="document-name">
 
-                                                            <span className="document-file-icon">
-                                                                {getFileIcon(
-                                                                    document
-                                                                )}
+                                                            <span
+                                                                className={`document-file-badge ${meta.key}`}
+                                                            >
+                                                                {meta.label}
                                                             </span>
 
                                                             <div>
@@ -912,10 +898,10 @@ export default function Documents() {
 
                                                     <td>
 
-                                                        <span className="document-type">
-                                                            {getFileType(
-                                                                document
-                                                            )}
+                                                        <span
+                                                            className={`document-type ${meta.key}`}
+                                                        >
+                                                            {meta.label}
                                                         </span>
 
                                                     </td>
@@ -942,19 +928,17 @@ export default function Documents() {
 
                                                     <td>
 
-                                                        {document.user
-                                                            ? `${document.user.first_name || ""} ${
-                                                                  document.user.last_name ||
-                                                                  ""
-                                                              }`.trim() ||
-                                                              document
-                                                                  .user
-                                                                  .name ||
-                                                              document
-                                                                  .user
-                                                                  .email ||
-                                                              "Inconnu"
-                                                            : "Inconnu"}
+                                                        <div className="document-author">
+
+                                                            <span className="document-author-avatar">
+                                                                {getAuthorInitials(
+                                                                    authorName
+                                                                )}
+                                                            </span>
+
+                                                            {authorName}
+
+                                                        </div>
 
                                                     </td>
 
@@ -988,19 +972,21 @@ export default function Documents() {
                                                                     )
                                                                 }
                                                             >
+                                                                <IconEye />
                                                                 Voir
                                                             </button>
 
                                                             <button
                                                                 type="button"
                                                                 className="document-delete-button"
+                                                                title="Supprimer"
                                                                 onClick={() =>
                                                                     handleDelete(
                                                                         document.id
                                                                     )
                                                                 }
                                                             >
-                                                                Supprimer
+                                                                <IconTrash />
                                                             </button>
 
                                                         </div>
@@ -1008,7 +994,8 @@ export default function Documents() {
                                                     </td>
 
                                                 </tr>
-                                            )
+                                                );
+                                            }
                                         )}
 
                                     </tbody>
@@ -1207,25 +1194,27 @@ export default function Documents() {
                                     Fichier
                                 </label>
 
-                                <input
-                                    id="file"
-                                    name="file"
-                                    type="file"
-                                    onChange={
-                                        handleChange
-                                    }
-                                    required
-                                />
+                                <div className="document-file-drop">
 
-                                {formData.file && (
-                                    <small>
-                                        Fichier sélectionné :{" "}
-                                        {
-                                            formData.file
-                                                .name
+                                    <IconUpload />
+
+                                    <span>
+                                        {formData.file
+                                            ? formData.file.name
+                                            : "Cliquez ou déposez un fichier ici"}
+                                    </span>
+
+                                    <input
+                                        id="file"
+                                        name="file"
+                                        type="file"
+                                        onChange={
+                                            handleChange
                                         }
-                                    </small>
-                                )}
+                                        required
+                                    />
+
+                                </div>
 
                             </div>
 

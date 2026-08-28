@@ -1,250 +1,204 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import Sidebar from "./components/pages/Sidebar.jsx";
 
 import Login from "./components/pages/Login.jsx";
 import Dashboard from "./components/pages/Dashboard.jsx";
-
 import Documents from "./components/pages/Documents.jsx";
 import DocumentDetails from "./components/pages/DocumentDetails.jsx";
-
 import Folders from "./components/pages/Folders.jsx";
-
 import Spaces from "./components/pages/Spaces.jsx";
 import SpaceDetails from "./components/pages/SpaceDetails.jsx";
-
 import Users from "./components/pages/Users.jsx";
-
 import Announcements from "./components/pages/Announcements.jsx";
 import Notifications from "./components/pages/Notifications.jsx";
-
 import Settings from "./components/pages/Settings.jsx";
 import Trash from "./components/pages/Trash.jsx";
 
 import "./App.css";
 
-
 export default function App() {
 
-    return (
+    const [sidebarCollapsed, setSidebarCollapsed] =
+        useState(() => {
+            return (
+                localStorage.getItem(
+                    "sidebarCollapsed"
+                ) === "true"
+            );
+        });
 
+    useEffect(() => {
+
+        const handleSidebarChange = (event) => {
+            setSidebarCollapsed(
+                event.detail.collapsed
+            );
+        };
+
+        window.addEventListener(
+            "sidebar-change",
+            handleSidebarChange
+        );
+
+        return () => {
+            window.removeEventListener(
+                "sidebar-change",
+                handleSidebarChange
+            );
+        };
+
+    }, []);
+
+    const Page = ({ children }) => (
+        <>
+            <Sidebar />
+
+            <main
+                className={`app-page ${
+                    sidebarCollapsed
+                        ? "app-page-collapsed"
+                        : ""
+                }`}
+            >
+                {children}
+            </main>
+        </>
+    );
+
+    return (
         <Routes>
 
-            {/* =====================================================
-                LOGIN
-                Première page de l'application
-            ===================================================== */}
+            {/* LOGIN */}
 
             <Route
                 path="/login"
                 element={<Login />}
             />
 
-
-            {/* =====================================================
-                DASHBOARD
-            ===================================================== */}
+            {/* DASHBOARD */}
 
             <Route
                 path="/dashboard"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Dashboard />
-                        </div>
-                    </>
+                    <Page>
+                        <Dashboard />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                DOCUMENTS
-            ===================================================== */}
+            {/* DOCUMENTS */}
 
             <Route
                 path="/documents"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Documents />
-                        </div>
-                    </>
+                    <Page>
+                        <Documents />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                DOCUMENT DETAILS
-                Exemple : /documents/3
-            ===================================================== */}
+            {/* DOCUMENT DETAILS */}
 
             <Route
                 path="/documents/:id"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <DocumentDetails />
-                        </div>
-                    </>
+                    <Page>
+                        <DocumentDetails />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                SETTINGS
-            ===================================================== */}
-
-            <Route
-                path="/settings"
-                element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Settings />
-                        </div>
-                    </>
-                }
-            />
-
-
-            {/* =====================================================
-                TRASH
-            ===================================================== */}
-
-                    <Route
-                        path="/trash"
-                        element={
-                            <>
-                                <Sidebar />
-                                <div className="app-page">
-                                    <Trash />
-                                </div>
-                            </>
-                        }
-                    />
-
-
-            {/* =====================================================
-                FOLDERS
-            ===================================================== */}
+            {/* FOLDERS */}
 
             <Route
                 path="/folders"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Folders />
-                        </div>
-                    </>
+                    <Page>
+                        <Folders />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                SPACES
-            ===================================================== */}
+            {/* SPACES */}
 
             <Route
                 path="/spaces"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Spaces />
-                        </div>
-                    </>
+                    <Page>
+                        <Spaces />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                SPACE DETAILS
-                Exemple : /spaces/3
-            ===================================================== */}
+            {/* SPACE DETAILS */}
 
             <Route
                 path="/spaces/:id"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <SpaceDetails />
-                        </div>
-                    </>
+                    <Page>
+                        <SpaceDetails />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                USERS
-            ===================================================== */}
+            {/* USERS */}
 
             <Route
                 path="/users"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Users />
-                        </div>
-                    </>
+                    <Page>
+                        <Users />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                ANNOUNCEMENTS
-            ===================================================== */}
+            {/* ANNOUNCEMENTS */}
 
             <Route
                 path="/announcements"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Announcements />
-                        </div>
-                    </>
+                    <Page>
+                        <Announcements />
+                    </Page>
                 }
             />
 
-
-            {/* =====================================================
-                NOTIFICATIONS
-            ===================================================== */}
+            {/* NOTIFICATIONS */}
 
             <Route
                 path="/notifications"
                 element={
-                    <>
-                        <Sidebar />
-
-                        <div className="app-page">
-                            <Notifications />
-                        </div>
-                    </>
+                    <Page>
+                        <Notifications />
+                    </Page>
                 }
             />
 
+            {/* SETTINGS */}
 
-            {/* =====================================================
-                RACINE
-                IMPORTANT :
-                "/" ouvre maintenant LOGIN
-            ===================================================== */}
+            <Route
+                path="/settings"
+                element={
+                    <Page>
+                        <Settings />
+                    </Page>
+                }
+            />
+
+            {/* TRASH */}
+
+            <Route
+                path="/trash"
+                element={
+                    <Page>
+                        <Trash />
+                    </Page>
+                }
+            />
+
+            {/* RACINE */}
 
             <Route
                 path="/"
@@ -256,11 +210,7 @@ export default function App() {
                 }
             />
 
-
-            {/* =====================================================
-                PAGE INEXISTANTE
-                Retour vers LOGIN
-            ===================================================== */}
+            {/* PAGE INEXISTANTE */}
 
             <Route
                 path="*"

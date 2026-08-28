@@ -30,11 +30,7 @@ body {
 
 
 /* =========================================================
-   APP PAGE
-   La sidebar elle-même (couleurs, logo, liens, comportement
-   mobile en tiroir) est entièrement gérée dans Sidebar.css.
-   Ce fichier gère uniquement l'espace réservé au contenu
-   à côté d'elle.
+   PAGE PRINCIPALE
 ========================================================= */
 
 .app-page {
@@ -47,12 +43,26 @@ body {
     box-sizing: border-box;
 
     overflow-x: hidden;
+
+    transition:
+        margin-left 0.25s ease,
+        width 0.25s ease;
 }
 
 
 /* =========================================================
-   RESPONSIVE - 900px
-   (valeur identique à votre App.css original)
+   SIDEBAR RÉDUITE
+========================================================= */
+
+.app-page.app-page-collapsed {
+    margin-left: 76px;
+
+    width: calc(100% - 76px);
+}
+
+
+/* =========================================================
+   TABLETTE
 ========================================================= */
 
 @media (max-width: 900px) {
@@ -62,24 +72,28 @@ body {
 
         width: calc(100% - 240px);
     }
+
+    .app-page.app-page-collapsed {
+        margin-left: 76px;
+
+        width: calc(100% - 76px);
+    }
 }
 
 
 /* =========================================================
-   RESPONSIVE - 700px — MODE TIROIR
-   En dessous de 700px, la sidebar sort du flux normal
-   (position: fixed, cachée hors-écran par défaut dans
-   Sidebar.css). Le contenu doit donc reprendre TOUTE la
-   largeur de l'écran, sans marge réservée.
-   C'est la SEULE vraie correction nécessaire pour le mobile.
+   MOBILE
 ========================================================= */
 
 @media (max-width: 700px) {
 
-    .app-page {
+    .app-page,
+    .app-page.app-page-collapsed {
         margin-left: 0;
 
         width: 100%;
+
+        min-height: 100vh;
     }
 }
 
