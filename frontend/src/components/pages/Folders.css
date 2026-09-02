@@ -1,406 +1,841 @@
+/* =========================================================
+   PAGE DOSSIERS - GED
+========================================================= */
 
 .folders-main {
     flex: 1;
     min-width: 0;
-    background: #f4f6f9;
     min-height: 100vh;
+    background: #f5f7fb;
+    color: #111827;
 }
 
+/* =========================================================
+   HEADER
+========================================================= */
+
 .folders-header {
-    height: 80px;
-    background: white;
+    min-height: 82px;
+    background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
-
     padding: 0 35px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 20px;
 }
 
 .folders-header h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 25px;
+    font-weight: 700;
     color: #111827;
+    letter-spacing: -0.3px;
 }
 
 .folders-header p {
-    margin: 5px 0 0;
+    margin: 6px 0 0;
     color: #6b7280;
     font-size: 13px;
 }
 
 .add-folder-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
     border: none;
     border-radius: 8px;
 
-    padding: 11px 18px;
+    padding: 11px 17px;
 
     background: #1e3a8a;
-    color: white;
+    color: #ffffff;
 
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
+
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .add-folder-button:hover {
     background: #172f6d;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(30, 58, 138, 0.18);
 }
+
+.add-folder-button:active {
+    transform: translateY(0);
+}
+
+/* =========================================================
+   CONTENU
+========================================================= */
 
 .folders-content {
-    padding: 35px;
+    padding: 30px 35px 40px;
 }
 
-.folders-message {
-    color: #6b7280;
-}
+/* =========================================================
+   STATISTIQUES
+========================================================= */
 
-.folders-error {
-    padding: 15px;
-
-    background: #fee2e2;
-    color: #991b1b;
-
-    border-radius: 8px;
-}
-
-.empty-folders {
-    background: white;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-
-    padding: 60px 20px;
-
-    text-align: center;
-}
-
-.empty-icon {
-    font-size: 50px;
-}
-
-.empty-folders h2 {
-    margin: 15px 0 8px;
-    color: #1f2937;
-}
-
-.empty-folders p {
-    margin: 0;
-    color: #6b7280;
-}
-
-.folders-grid {
+.folders-stats {
     display: grid;
-
-    grid-template-columns: repeat(4, 1fr);
-
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
 }
 
-.folder-card {
-    background: white;
-
+.folder-stat-card {
+    background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-
-    padding: 22px;
+    padding: 18px 20px;
 
     display: flex;
     align-items: center;
-
     gap: 15px;
 
-    cursor: pointer;
-
-    transition: 0.2s;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.folder-card:hover {
-    transform: translateY(-3px);
-
-    box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.08);
+.folder-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 20px rgba(15, 23, 42, 0.06);
 }
 
-.folder-icon {
-    font-size: 35px;
-}
+.folder-stat-icon {
+    width: 44px;
+    height: 44px;
 
-.folder-info h3 {
-    margin: 0;
-
-    font-size: 15px;
-
-    color: #1e3a8a;
-}
-
-.folder-info p {
-    margin: 5px 0 0;
-
-    font-size: 12px;
-
-    color: #9ca3af;
-}
-
-@media (max-width: 1100px) {
-    .folders-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 600px) {
-    .folders-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .folders-header {
-        height: auto;
-        padding: 20px;
-        gap: 15px;
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .folders-content {
-        padding: 20px;
-    }
-}
-
-
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-
-    background: rgba(0, 0, 0, 0.45);
+    border-radius: 10px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    z-index: 1000;
+    background: #eef2ff;
+    color: #1e3a8a;
+
+    font-size: 21px;
 }
 
-.folder-modal {
-    width: 450px;
-    max-width: calc(100% - 40px);
+.folder-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
 
-    background: white;
+.folder-stat-info strong {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111827;
+}
 
+.folder-stat-info span {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* =========================================================
+   BARRE OUTILS
+========================================================= */
+
+.folders-toolbar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
 
-    padding: 25px;
+    padding: 15px 17px;
 
-    box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    margin-bottom: 25px;
+    gap: 15px;
+
+    margin-bottom: 22px;
 }
 
-.modal-header h2 {
-    margin: 0;
-
-    font-size: 20px;
-
-    color: #111827;
+.folder-search {
+    position: relative;
+    flex: 1;
+    max-width: 420px;
 }
 
-.modal-close {
-    border: none;
+.folder-search-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
 
-    background: transparent;
+    transform: translateY(-50%);
 
-    font-size: 28px;
-
-    color: #6b7280;
-
-    cursor: pointer;
+    color: #9ca3af;
+    font-size: 15px;
 }
 
-.modal-close:hover {
-    color: #111827;
-}
-
-
-/* ========================================
-   FORM
-======================================== */
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-
-    gap: 8px;
-}
-
-.form-group label {
-    font-size: 14px;
-
-    font-weight: 600;
-
-    color: #374151;
-}
-
-.form-group input {
+.folder-search input {
     width: 100%;
+    box-sizing: border-box;
 
-    padding: 12px;
+    padding: 10px 12px 10px 37px;
 
     border: 1px solid #d1d5db;
-
     border-radius: 8px;
 
-    font-size: 14px;
+    background: #ffffff;
+
+    color: #111827;
+    font-size: 13px;
 
     outline: none;
 
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input:focus {
+.folder-search input:focus {
     border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.08);
 }
 
-
-/* ========================================
-   MODAL BUTTONS
-======================================== */
-
-.modal-actions {
+.folder-sort {
     display: flex;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    margin-top: 25px;
+    align-items: center;
+    gap: 8px;
 }
 
-.cancel-button,
-.create-button {
-    padding: 11px 18px;
+.folder-sort label {
+    font-size: 12px;
+    color: #6b7280;
+}
 
+.folder-sort select {
+    padding: 9px 11px;
+
+    border: 1px solid #d1d5db;
     border-radius: 8px;
 
-    font-size: 14px;
+    background: #ffffff;
 
+    color: #374151;
+    font-size: 12px;
+
+    outline: none;
     cursor: pointer;
 }
 
-.cancel-button {
-    border: 1px solid #d1d5db;
-
-    background: white;
-
-    color: #374151;
+.folder-sort select:focus {
+    border-color: #1e3a8a;
 }
 
-.cancel-button:hover {
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.folders-message {
+    padding: 30px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.folders-error {
+    margin-bottom: 20px;
+
+    padding: 13px 15px;
+
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+
+    color: #991b1b;
+
+    border-radius: 9px;
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   DOSSIERS VIDES
+========================================================= */
+
+.empty-folders {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    padding: 70px 25px;
+
+    text-align: center;
+}
+
+.empty-icon {
+    width: 65px;
+    height: 65px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef2ff;
+
+    font-size: 32px;
+}
+
+.empty-folders h2 {
+    margin: 0 0 8px;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: #1f2937;
+}
+
+.empty-folders p {
+    margin: 0;
+
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* =========================================================
+   GRILLE DOSSIERS
+========================================================= */
+
+.folders-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+/* =========================================================
+   CARTE DOSSIER
+========================================================= */
+
+.folder-card {
+    position: relative;
+
+    min-width: 0;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 13px;
+
+    padding: 20px;
+
+    display: flex;
+    align-items: flex-start;
+
+    gap: 14px;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.folder-card:hover {
+    transform: translateY(-3px);
+
+    border-color: #dbe2f1;
+
+    box-shadow:
+        0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+/* =========================================================
+   ICÔNE DOSSIER
+========================================================= */
+
+.folder-icon {
+    width: 46px;
+    height: 46px;
+
+    flex-shrink: 0;
+
+    border-radius: 11px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eff4ff;
+
+    font-size: 23px;
+}
+
+/* =========================================================
+   INFORMATIONS
+========================================================= */
+
+.folder-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.folder-info h3 {
+    margin: 1px 0 0;
+
+    color: #1e3a8a;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-info p {
+    margin: 6px 0 0;
+
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.folder-info small {
+    display: inline-flex;
+
+    margin-top: 8px;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
     background: #f3f4f6;
+
+    color: #6b7280;
+
+    font-size: 10px;
+    font-weight: 500;
 }
 
-.create-button {
-    border: none;
-
-    background: #1e3a8a;
-
-    color: white;
-}
-
-.create-button:hover {
-    background: #172f6d;
-}
-
-.create-button:disabled {
-    opacity: 0.6;
-
-    cursor: not-allowed;
-}
-
-
-
+/* =========================================================
+   ACTIONS
+========================================================= */
 
 .folder-actions {
     display: flex;
+    align-items: center;
     gap: 6px;
+
     margin-left: auto;
 }
 
 .edit-folder-button,
 .delete-folder-button {
     border: none;
-    border-radius: 6px;
 
-    padding: 7px 10px;
+    border-radius: 7px;
+
+    padding: 7px 9px;
 
     font-size: 11px;
+    font-weight: 500;
 
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
 }
 
 .edit-folder-button {
-    background: #e0e7ff;
+    background: #eef2ff;
     color: #1e3a8a;
 }
 
 .edit-folder-button:hover {
-    background: #c7d2fe;
+    background: #dbe4ff;
+    transform: translateY(-1px);
 }
 
 .delete-folder-button {
-    background: #fee2e2;
-    color: #991b1b;
+    background: #fef2f2;
+    color: #b91c1c;
 }
 
 .delete-folder-button:hover {
-    background: #fecaca;
+    background: #fee2e2;
+    transform: translateY(-1px);
 }
 
+/* =========================================================
+   MODAL
+========================================================= */
 
-@media (max-width: 700px) {
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.48);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 1000;
+
+    backdrop-filter: blur(2px);
+}
+
+.folder-modal {
+    width: 450px;
+    max-width: 100%;
+
+    background: #ffffff;
+
+    border-radius: 14px;
+
+    padding: 26px;
+
+    box-shadow:
+        0 25px 60px rgba(15, 23, 42, 0.22);
+
+    animation: modalAppear 0.2s ease;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 18px;
+
+    margin-bottom: 22px;
+
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.modal-header h2 {
+    margin: 0;
+
+    font-size: 19px;
+    font-weight: 650;
+
+    color: #111827;
+}
+
+.modal-close {
+    width: 34px;
+    height: 34px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+    color: #6b7280;
+
+    cursor: pointer;
+
+    transition: background 0.2s, color 0.2s;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* =========================================================
+   FORMULAIRE
+========================================================= */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 11px 12px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.form-group input::placeholder {
+    color: #9ca3af;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #1e3a8a;
+
+    box-shadow:
+        0 0 0 3px rgba(30, 58, 138, 0.08);
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   MODAL ACTIONS
+========================================================= */
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 25px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid #f0f1f3;
+}
+
+.cancel-button,
+.create-button {
+    min-width: 105px;
+
+    padding: 10px 16px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s,
+        transform 0.15s;
+}
+
+.cancel-button {
+    border: 1px solid #d1d5db;
+
+    background: #ffffff;
+
+    color: #374151;
+}
+
+.cancel-button:hover {
+    background: #f9fafb;
+}
+
+.create-button {
+    border: none;
+
+    background: #1e3a8a;
+
+    color: #ffffff;
+}
+
+.create-button:hover {
+    background: #172f6d;
+    transform: translateY(-1px);
+}
+
+.create-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+/* =========================================================
+   RESPONSIVE - TABLETTE
+========================================================= */
+
+@media (max-width: 1200px) {
+    .folders-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .folders-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* =========================================================
+   RESPONSIVE - TABLETTE PETITE
+========================================================= */
+
+@media (max-width: 850px) {
+    .folders-header {
+        padding: 0 22px;
+    }
+
+    .folders-content {
+        padding: 25px 22px 35px;
+    }
+
+    .folders-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .folders-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .folder-search {
+        max-width: none;
+    }
+
+    .folder-sort {
+        justify-content: space-between;
+    }
+}
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+========================================================= */
+
+@media (max-width: 650px) {
+    .folders-header {
+        min-height: auto;
+
+        padding: 18px 20px;
+
+        flex-direction: column;
+        align-items: stretch;
+
+        gap: 15px;
+    }
+
+    .folders-header h1 {
+        font-size: 22px;
+    }
+
+    .add-folder-button {
+        width: 100%;
+    }
+
+    .folders-content {
+        padding: 20px;
+    }
+
+    .folders-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .folder-card {
+        padding: 17px;
+    }
+
+    .folder-actions {
+        width: 100%;
+
+        margin-left: 0;
+
+        padding-top: 12px;
+
+        border-top: 1px solid #f1f1f1;
+    }
+
+    .edit-folder-button,
+    .delete-folder-button {
+        flex: 1;
+
+        padding: 9px;
+    }
+
+    .folder-modal {
+        padding: 20px;
+
+        border-radius: 12px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .cancel-button,
+    .create-button {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   TRÈS PETIT ÉCRAN
+========================================================= */
+
+@media (max-width: 400px) {
+    .folders-content {
+        padding: 15px;
+    }
+
+    .folders-header {
+        padding: 16px;
+    }
 
     .folder-card {
         flex-wrap: wrap;
     }
 
-    .folder-actions {
-        width: 100%;
-        margin-left: 0;
+    .folder-info {
+        max-width: calc(100% - 60px);
     }
-}
-
-
-
-.form-group select {
-    width: 100%;
-    padding: 12px;
-
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-
-    background: white;
-
-    font-size: 14px;
-
-    outline: none;
-}
-
-.form-group select:focus {
-    border-color: #1e3a8a;
-}
-
-.folder-info small {
-    display: block;
-
-    margin-top: 5px;
-
-    color: #6b7280;
-
-    font-size: 11px;
 }

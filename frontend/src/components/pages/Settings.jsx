@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+
 import api from "../services/api";
+
 import { useTranslation } from "react-i18next";
-import i18n from "../../i18n";
+
 import "./Settings.css";
 
 export default function Settings() {
-
     const { t } = useTranslation();
 
     const [user, setUser] = useState(null);
@@ -26,85 +27,66 @@ export default function Settings() {
         localStorage.getItem("language") || "fr"
     );
 
-    const [profileLoading, setProfileLoading] =
-        useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
 
-    const [passwordLoading, setPasswordLoading] =
-        useState(false);
+    const [profileMessage, setProfileMessage] = useState("");
+    const [passwordMessage, setPasswordMessage] = useState("");
 
-    const [profileMessage, setProfileMessage] =
-        useState("");
-
-    const [passwordMessage, setPasswordMessage] =
-        useState("");
-
-    const [profileError, setProfileError] =
-        useState("");
-
-    const [passwordError, setPasswordError] =
-        useState("");
+    const [profileError, setProfileError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
 
     const [showCurrentPassword, setShowCurrentPassword] =
         useState(false);
 
-    const [showPassword, setShowPassword] =
-        useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const [showPasswordConfirmation, setShowPasswordConfirmation] =
         useState(false);
-
 
     // =====================================================
     // CHARGER UTILISATEUR
     // =====================================================
 
     useEffect(() => {
-
-        const storedUser =
-            localStorage.getItem("user");
+        const storedUser = localStorage.getItem("user");
 
         if (!storedUser) {
             return;
         }
 
         try {
-
-            const parsedUser =
-                JSON.parse(storedUser);
+            const parsedUser = JSON.parse(storedUser);
 
             setUser(parsedUser);
 
             setProfile({
-                first_name:
-                    parsedUser.first_name || "",
-
-                last_name:
-                    parsedUser.last_name || "",
-
-                email:
-                    parsedUser.email || "",
+                first_name: parsedUser.first_name || "",
+                last_name: parsedUser.last_name || "",
+                email: parsedUser.email || "",
             });
-
         } catch (error) {
-
-            console.error(
-                "Erreur utilisateur :",
-                error
-            );
-
+            console.error("Erreur utilisateur :", error);
         }
-
     }, []);
 
+    // =====================================================
+    // INITIALISER LA DIRECTION DE LA PAGE
+    // =====================================================
+
+    useEffect(() => {
+        document.documentElement.lang = language;
+
+        document.documentElement.dir =
+            language === "ar" ? "rtl" : "ltr";
+    }, [language]);
 
     // =====================================================
     // CHANGER LA LANGUE
     // =====================================================
 
-    const handleLanguageChange = async (e) => {
-
-        const selectedLanguage =
-            e.target.value;
+    const handleLanguageChange = (e) => {
+        const selectedLanguage = e.target.value;
 
         setLanguage(selectedLanguage);
 
@@ -113,31 +95,24 @@ export default function Settings() {
             selectedLanguage
         );
 
-        await i18n.changeLanguage(
-            selectedLanguage
-        );
+        document.documentElement.lang = selectedLanguage;
 
-        // RTL pour arabe
         document.documentElement.dir =
             selectedLanguage === "ar"
                 ? "rtl"
                 : "ltr";
 
-        document.documentElement.lang =
-            selectedLanguage;
+        // Recharge l'application pour appliquer
+        // les traductions enregistrées.
+        window.location.reload();
     };
-
 
     // =====================================================
     // MODIFIER PROFIL
     // =====================================================
 
     const handleProfileChange = (e) => {
-
-        const {
-            name,
-            value,
-        } = e.target;
+        const { name, value } = e.target;
 
         setProfile((previous) => ({
             ...previous,
@@ -148,70 +123,55 @@ export default function Settings() {
         setProfileError("");
     };
 
-
     // =====================================================
     // ENREGISTRER PROFIL
     // =====================================================
 
     const handleUpdateProfile = async (e) => {
-
         e.preventDefault();
 
         setProfileMessage("");
         setProfileError("");
 
         if (!profile.first_name.trim()) {
-
             setProfileError(
                 "Le prénom est obligatoire."
             );
-
             return;
         }
 
         if (!profile.last_name.trim()) {
-
             setProfileError(
                 "Le nom est obligatoire."
             );
-
             return;
         }
 
         try {
-
             setProfileLoading(true);
 
-            const response =
-                await api.put(
-                    "/profile",
-                    {
-                        first_name:
-                            profile.first_name,
-
-                        last_name:
-                            profile.last_name,
-                    }
-                );
+            const response = await api.put(
+                "/profile",
+                {
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
+                }
+            );
 
             const updatedUser =
                 response.data?.user ||
                 response.data?.data ||
                 {
                     ...user,
-                    first_name:
-                        profile.first_name,
-                    last_name:
-                        profile.last_name,
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
                 };
 
             const finalUser = {
                 ...user,
                 ...updatedUser,
-                first_name:
-                    profile.first_name,
-                last_name:
-                    profile.last_name,
+                first_name: profile.first_name,
+                last_name: profile.last_name,
             };
 
             setUser(finalUser);
@@ -224,9 +184,7 @@ export default function Settings() {
             setProfileMessage(
                 "Votre profil a été modifié avec succès."
             );
-
         } catch (error) {
-
             console.error(
                 "Erreur modification profil :",
                 error
@@ -236,25 +194,17 @@ export default function Settings() {
                 error.response?.data?.message ||
                 "Impossible de modifier le profil."
             );
-
         } finally {
-
             setProfileLoading(false);
-
         }
     };
-
 
     // =====================================================
     // PASSWORD CHANGE
     // =====================================================
 
     const handlePasswordChange = (e) => {
-
-        const {
-            name,
-            value,
-        } = e.target;
+        const { name, value } = e.target;
 
         setPassword((previous) => ({
             ...previous,
@@ -265,42 +215,34 @@ export default function Settings() {
         setPasswordError("");
     };
 
-
     // =====================================================
     // MODIFIER PASSWORD
     // =====================================================
 
     const handleUpdatePassword = async (e) => {
-
         e.preventDefault();
 
         setPasswordMessage("");
         setPasswordError("");
 
         if (!password.current_password) {
-
             setPasswordError(
                 "Veuillez saisir votre mot de passe actuel."
             );
-
             return;
         }
 
         if (!password.password) {
-
             setPasswordError(
                 "Veuillez saisir un nouveau mot de passe."
             );
-
             return;
         }
 
         if (password.password.length < 8) {
-
             setPasswordError(
                 "Le nouveau mot de passe doit contenir au moins 8 caractères."
             );
-
             return;
         }
 
@@ -308,16 +250,13 @@ export default function Settings() {
             password.password !==
             password.password_confirmation
         ) {
-
             setPasswordError(
                 "Les mots de passe ne correspondent pas."
             );
-
             return;
         }
 
         try {
-
             setPasswordLoading(true);
 
             await api.put(
@@ -343,9 +282,7 @@ export default function Settings() {
             setPasswordMessage(
                 "Votre mot de passe a été modifié avec succès."
             );
-
         } catch (error) {
-
             console.error(
                 "Erreur modification mot de passe :",
                 error
@@ -355,29 +292,24 @@ export default function Settings() {
                 error.response?.data?.message ||
                 "Impossible de modifier le mot de passe."
             );
-
         } finally {
-
             setPasswordLoading(false);
-
         }
     };
-
 
     // =====================================================
     // RENDER
     // =====================================================
 
     return (
-
         <main className="settings-page">
 
-            {/* HEADER */}
+            {/* =====================================================
+                HEADER
+            ===================================================== */}
 
             <header className="settings-header">
-
                 <div>
-
                     <h1>
                         {t("settings")}
                     </h1>
@@ -386,16 +318,14 @@ export default function Settings() {
                         Gérez votre profil,
                         votre sécurité et vos préférences.
                     </p>
-
                 </div>
-
             </header>
 
-
-            {/* CONTENT */}
+            {/* =====================================================
+                CONTENT
+            ===================================================== */}
 
             <section className="settings-content">
-
 
                 {/* =================================================
                     PROFIL
@@ -410,7 +340,6 @@ export default function Settings() {
                         </div>
 
                         <div>
-
                             <h2>
                                 {t("profile")}
                             </h2>
@@ -418,11 +347,9 @@ export default function Settings() {
                             <p>
                                 Modifiez vos informations personnelles.
                             </p>
-
                         </div>
 
                     </div>
-
 
                     <form
                         className="settings-form"
@@ -447,7 +374,6 @@ export default function Settings() {
 
                             </div>
 
-
                             <div className="settings-field">
 
                                 <label>
@@ -465,7 +391,6 @@ export default function Settings() {
                             </div>
 
                         </div>
-
 
                         <div className="settings-field">
 
@@ -486,20 +411,17 @@ export default function Settings() {
 
                         </div>
 
-
                         {profileError && (
                             <div className="settings-error">
                                 {profileError}
                             </div>
                         )}
 
-
                         {profileMessage && (
                             <div className="settings-success">
                                 {profileMessage}
                             </div>
                         )}
-
 
                         <div className="settings-actions">
 
@@ -508,12 +430,9 @@ export default function Settings() {
                                 className="settings-primary-button"
                                 disabled={profileLoading}
                             >
-
                                 {profileLoading
                                     ? "Enregistrement..."
-                                    : "Enregistrer"
-                                }
-
+                                    : "Enregistrer"}
                             </button>
 
                         </div>
@@ -521,7 +440,6 @@ export default function Settings() {
                     </form>
 
                 </div>
-
 
                 {/* =================================================
                     SECURITE
@@ -536,7 +454,6 @@ export default function Settings() {
                         </div>
 
                         <div>
-
                             <h2>
                                 {t("security")}
                             </h2>
@@ -544,16 +461,16 @@ export default function Settings() {
                             <p>
                                 Modifiez votre mot de passe.
                             </p>
-
                         </div>
 
                     </div>
-
 
                     <form
                         className="settings-form"
                         onSubmit={handleUpdatePassword}
                     >
+
+                        {/* MOT DE PASSE ACTUEL */}
 
                         <div className="settings-field">
 
@@ -597,6 +514,7 @@ export default function Settings() {
 
                         </div>
 
+                        {/* NOUVEAU MOT DE PASSE */}
 
                         <div className="settings-field">
 
@@ -640,6 +558,7 @@ export default function Settings() {
 
                         </div>
 
+                        {/* CONFIRMATION */}
 
                         <div className="settings-field">
 
@@ -683,10 +602,11 @@ export default function Settings() {
 
                         </div>
 
-
                         <div className="password-help">
 
-                            <span>ℹ️</span>
+                            <span>
+                                ℹ️
+                            </span>
 
                             <span>
                                 Le mot de passe doit contenir
@@ -695,20 +615,17 @@ export default function Settings() {
 
                         </div>
 
-
                         {passwordError && (
                             <div className="settings-error">
                                 {passwordError}
                             </div>
                         )}
 
-
                         {passwordMessage && (
                             <div className="settings-success">
                                 {passwordMessage}
                             </div>
                         )}
-
 
                         <div className="settings-actions">
 
@@ -717,12 +634,9 @@ export default function Settings() {
                                 className="settings-primary-button"
                                 disabled={passwordLoading}
                             >
-
                                 {passwordLoading
                                     ? "Modification..."
-                                    : "Modifier le mot de passe"
-                                }
-
+                                    : "Modifier le mot de passe"}
                             </button>
 
                         </div>
@@ -730,7 +644,6 @@ export default function Settings() {
                     </form>
 
                 </div>
-
 
                 {/* =================================================
                     LANGUE
@@ -745,7 +658,6 @@ export default function Settings() {
                         </div>
 
                         <div>
-
                             <h2>
                                 {t("language")}
                             </h2>
@@ -753,11 +665,9 @@ export default function Settings() {
                             <p>
                                 Choisissez la langue de l'application.
                             </p>
-
                         </div>
 
                     </div>
-
 
                     <div className="settings-language">
 
@@ -787,7 +697,6 @@ export default function Settings() {
                             </select>
 
                         </div>
-
 
                         <div className="language-info">
 

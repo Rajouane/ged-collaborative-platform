@@ -1,377 +1,275 @@
 /* =========================================================
-   ANNOUNCEMENTS
-   Le Layout gère déjà le Sidebar.
-   NE PAS ajouter margin-left ici.
+   ANNOUNCEMENTS - PAGE PRINCIPALE
 ========================================================= */
 
-.announcements-main {
+.announcements-page {
     width: 100%;
     min-width: 0;
     min-height: 100vh;
-
-    background: #f5f7fb;
-
+    background: #f8fafc;
     box-sizing: border-box;
+    padding: 0;
 }
-
 
 /* =========================================================
    HEADER
 ========================================================= */
 
 .announcements-header {
-    min-height: 82px;
-
-    padding: 0 35px;
-
+    min-height: 90px;
+    padding: 22px 35px;
     background: #ffffff;
-
-    border-bottom: 1px solid #e5e7eb;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 30px;
-
-    box-sizing: border-box;
-}
-
-
-.announcements-header h1 {
-    margin: 0;
-
-    color: #111827;
-
-    font-size: 27px;
-    font-weight: 700;
-
-    line-height: 1.2;
-}
-
-
-.announcements-header p {
-    margin: 7px 0 0;
-
-    color: #6b7280;
-
-    font-size: 14px;
-}
-
-
-/* =========================================================
-   NEW ANNOUNCEMENT BUTTON
-========================================================= */
-
-.add-announcement-button {
-    height: 46px;
-
-    padding: 0 20px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    gap: 9px;
-
-    border: none;
-    border-radius: 9px;
-
-    background: #2563eb;
-
-    color: #ffffff;
-
-    font-family: inherit;
-
-    font-size: 14px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: all 0.2s ease;
-}
-
-
-.add-announcement-button:hover {
-    background: #1d4ed8;
-
-    transform: translateY(-1px);
-
-    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.20);
-}
-
-
-.add-announcement-button span {
-    font-size: 21px;
-
-    line-height: 1;
-}
-
-
-/* =========================================================
-   CONTENT
-========================================================= */
-
-.announcements-content {
-    width: 100%;
-
-    padding: 30px 35px 45px;
-
-    box-sizing: border-box;
-}
-
-
-/* =========================================================
-   ALERT
-========================================================= */
-
-.announcement-alert {
-    width: 100%;
-
-    margin-bottom: 20px;
-
-    padding: 14px 16px;
-
-    border-radius: 9px;
-
-    box-sizing: border-box;
-
-    font-size: 14px;
-    font-weight: 500;
-}
-
-
-.announcement-alert.error {
-    background: #fef2f2;
-
-    border: 1px solid #fecaca;
-
-    color: #b91c1c;
-}
-
-
-.announcement-alert.success {
-    background: #f0fdf4;
-
-    border: 1px solid #bbf7d0;
-
-    color: #15803d;
-}
-
-
-/* =========================================================
-   TOOLBAR
-========================================================= */
-
-.announcements-toolbar {
-    width: 100%;
-
-    margin-bottom: 25px;
+    border-bottom: 1px solid #e8edf3;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
     gap: 25px;
+    box-sizing: border-box;
 }
 
+.announcements-header > div {
+    min-width: 0;
+}
 
-/* SEARCH */
+.announcements-header h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 28px;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
 
-.announcement-search {
+.announcements-header p {
+    margin: 7px 0 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   BOUTON PRINCIPAL
+========================================================= */
+
+.btn-primary {
+    height: 44px;
+    padding: 0 18px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 7px 18px rgba(37, 99, 235, 0.24);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =========================================================
+   CONTENU
+========================================================= */
+
+.announcements-page {
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   TOOLBAR / RECHERCHE
+========================================================= */
+
+.announcements-toolbar {
     width: 100%;
-    max-width: 650px;
-
-    height: 48px;
+    padding: 26px 35px 0;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
 
-    gap: 10px;
+    gap: 20px;
+    box-sizing: border-box;
+}
 
-    padding: 0 15px;
+/* =========================================================
+   INPUT RECHERCHE
+========================================================= */
+
+.search-input {
+    width: 100%;
+    max-width: 650px;
+    height: 48px;
+
+    padding: 0 16px;
+
+    border: 1px solid #dce3ec;
+    border-radius: 10px;
+
+    outline: none;
 
     background: #ffffff;
+    color: #0f172a;
 
-    border: 1px solid #dbe1ea;
-
-    border-radius: 9px;
+    font-family: inherit;
+    font-size: 14px;
 
     box-sizing: border-box;
 
-    transition: 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
+.search-input:hover {
+    border-color: #cbd5e1;
+}
 
-.announcement-search:focus-within {
+.search-input:focus {
     border-color: #2563eb;
+    background: #ffffff;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.08);
+        0 0 0 3px rgba(37, 99, 235, 0.09);
 }
 
-
-.announcement-search span {
-    flex-shrink: 0;
-
-    font-size: 19px;
+.search-input::placeholder {
+    color: #94a3b8;
 }
 
+/* =========================================================
+   ALERTES
+========================================================= */
 
-.announcement-search input {
-    width: 100%;
+.error-message {
+    margin: 22px 35px 0;
+    padding: 14px 16px;
 
-    border: none;
-    outline: none;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
 
-    background: transparent;
-
-    color: #111827;
-
-    font-family: inherit;
+    background: #fff7f7;
+    color: #b91c1c;
 
     font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
 }
-
-
-.announcement-search input::placeholder {
-    color: #9ca3af;
-}
-
-
-/* COUNT */
-
-.announcement-count {
-    flex-shrink: 0;
-
-    color: #6b7280;
-
-    font-size: 14px;
-}
-
-
-.announcement-count strong {
-    margin-right: 5px;
-
-    color: #111827;
-
-    font-size: 17px;
-}
-
 
 /* =========================================================
    LOADING
 ========================================================= */
 
-.announcement-loading {
-    width: 100%;
-
-    padding: 60px 20px;
+.loading-state {
+    margin: 26px 35px 50px;
+    padding: 65px 20px;
 
     background: #ffffff;
-
     border: 1px solid #e5e7eb;
+    border-radius: 14px;
 
-    border-radius: 12px;
-
-    color: #6b7280;
+    color: #64748b;
 
     text-align: center;
+    font-size: 14px;
 
     box-sizing: border-box;
 }
-
 
 /* =========================================================
-   EMPTY
+   EMPTY STATE
 ========================================================= */
 
-.empty-announcements {
-    width: 100%;
-
-    padding: 70px 30px;
+.empty-state {
+    margin: 26px 35px 50px;
+    padding: 75px 30px;
 
     background: #ffffff;
-
     border: 1px solid #e5e7eb;
-
-    border-radius: 12px;
+    border-radius: 14px;
 
     text-align: center;
-
     box-sizing: border-box;
 }
 
+.empty-icon {
+    width: 72px;
+    height: 72px;
 
-.empty-announcement-icon {
-    width: 70px;
-    height: 70px;
-
-    margin: 0 auto 18px;
+    margin: 0 auto 20px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 18px;
+    border-radius: 20px;
 
     background: #eff6ff;
+    color: #2563eb;
 
     font-size: 34px;
+
+    box-shadow:
+        0 6px 18px rgba(37, 99, 235, 0.08);
 }
 
-
-.empty-announcements h2 {
+.empty-state h2 {
     margin: 0 0 8px;
 
-    color: #111827;
-
+    color: #0f172a;
     font-size: 21px;
+    font-weight: 700;
 }
 
+.empty-state p {
+    max-width: 480px;
 
-.empty-announcements p {
-    margin: 0 auto 22px;
+    margin: 0 auto 24px;
 
-    color: #6b7280;
+    color: #64748b;
 
     font-size: 14px;
+    line-height: 1.6;
 }
-
-
-.empty-announcements button {
-    height: 40px;
-
-    padding: 0 17px;
-
-    border: none;
-
-    border-radius: 7px;
-
-    background: #2563eb;
-
-    color: #ffffff;
-
-    font-family: inherit;
-
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-}
-
-
-.empty-announcements button:hover {
-    background: #1d4ed8;
-}
-
 
 /* =========================================================
-   CARDS GRID
+   GRID
 ========================================================= */
 
 .announcements-grid {
     width: 100%;
+
+    padding: 26px 35px 50px;
 
     display: grid;
 
@@ -383,131 +281,143 @@
     box-sizing: border-box;
 }
 
-
 /* =========================================================
-   CARD
+   CARTE
 ========================================================= */
 
 .announcement-card {
     min-width: 0;
+    min-height: 285px;
 
-    padding: 22px;
+    padding: 23px;
 
     display: flex;
     flex-direction: column;
 
     background: #ffffff;
 
-    border: 1px solid #e5e7eb;
-
-    border-radius: 13px;
+    border: 1px solid #e5eaf0;
+    border-radius: 14px;
 
     box-sizing: border-box;
 
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
+    box-shadow:
+        0 2px 5px rgba(15, 23, 42, 0.025);
 
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease,
+        border-color 0.22s ease;
+}
 
 .announcement-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 
-    border-color: #dbeafe;
+    border-color: #d5e2f5;
 
     box-shadow:
-        0 10px 25px rgba(15, 23, 42, 0.07);
+        0 14px 30px rgba(15, 23, 42, 0.08);
 }
-
 
 /* =========================================================
-   CARD TOP
+   HEADER DE LA CARTE
 ========================================================= */
 
-.announcement-card-top {
+.announcement-card-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
 
-    gap: 15px;
+    gap: 13px;
 
-    margin-bottom: 20px;
+    margin-bottom: 19px;
 }
-
 
 .announcement-icon {
     width: 48px;
     height: 48px;
 
+    flex-shrink: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 12px;
+    border-radius: 13px;
 
-    background: #eff6ff;
+    background:
+        linear-gradient(
+            135deg,
+            #eff6ff,
+            #dbeafe
+        );
 
-    font-size: 24px;
+    color: #2563eb;
+
+    font-size: 23px;
+
+    box-shadow:
+        0 4px 10px rgba(37, 99, 235, 0.08);
 }
 
-
-.announcement-card-date {
-    color: #9ca3af;
-
-    font-size: 12px;
+.announcement-card-title {
+    min-width: 0;
 }
 
+.announcement-card-title h2 {
+    margin: 0 0 5px;
 
-/* =========================================================
-   TITLE
-========================================================= */
+    color: #0f172a;
 
-.announcement-card h2 {
-    margin: 0 0 12px;
-
-    color: #111827;
-
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 700;
 
-    line-height: 1.35;
+    line-height: 1.4;
 
     overflow-wrap: anywhere;
 }
 
+.announcement-card-title span {
+    color: #94a3b8;
+
+    font-size: 11px;
+    font-weight: 500;
+}
 
 /* =========================================================
-   CONTENT
+   CONTENU DE LA CARTE
 ========================================================= */
 
-.announcement-content-text {
+.announcement-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.announcement-content p {
     margin: 0;
 
     color: #64748b;
 
-    font-size: 14px;
-
-    line-height: 1.65;
+    font-size: 13.5px;
+    line-height: 1.7;
 
     display: -webkit-box;
-
     -webkit-box-orient: vertical;
-
     -webkit-line-clamp: 5;
 
     line-clamp: 5;
 
     overflow: hidden;
-}
 
+    overflow-wrap: anywhere;
+}
 
 /* =========================================================
    FOOTER
 ========================================================= */
 
-.announcement-card-footer {
-    margin-top: 25px;
+.announcement-footer {
+    margin-top: auto;
+
     padding-top: 17px;
 
     border-top: 1px solid #eef2f7;
@@ -519,9 +429,8 @@
     gap: 15px;
 }
 
-
 /* =========================================================
-   AUTHOR
+   AUTEUR
 ========================================================= */
 
 .announcement-author {
@@ -533,8 +442,7 @@
     gap: 9px;
 }
 
-
-.announcement-avatar {
+.author-icon {
     width: 37px;
     height: 37px;
 
@@ -546,46 +454,36 @@
 
     border-radius: 50%;
 
-    background: #2563eb;
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1d4ed8
+        );
 
     color: #ffffff;
 
     font-size: 13px;
-    font-weight: 700;
+
+    box-shadow:
+        0 3px 8px rgba(37, 99, 235, 0.18);
 }
 
-
-.announcement-author > div:last-child {
+.announcement-author > span:last-child {
     min-width: 0;
 
-    display: flex;
-    flex-direction: column;
-
-    gap: 2px;
-}
-
-
-.announcement-author strong {
-    max-width: 120px;
+    max-width: 150px;
 
     overflow: hidden;
 
-    color: #374151;
+    color: #334155;
 
     font-size: 12px;
+    font-weight: 650;
 
     text-overflow: ellipsis;
-
     white-space: nowrap;
 }
-
-
-.announcement-author span {
-    color: #9ca3af;
-
-    font-size: 11px;
-}
-
 
 /* =========================================================
    ACTIONS
@@ -595,58 +493,60 @@
     display: flex;
     align-items: center;
 
-    gap: 6px;
+    gap: 7px;
+
+    flex-shrink: 0;
 }
 
+.btn-edit,
+.btn-delete {
+    height: 34px;
 
-.edit-announcement-button,
-.delete-announcement-button {
-    height: 35px;
-
-    padding: 0 11px;
+    padding: 0 10px;
 
     border: none;
-
     border-radius: 7px;
 
     font-family: inherit;
 
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 650;
 
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
+.btn-edit:hover,
+.btn-delete:hover {
+    transform: translateY(-1px);
+}
 
-.edit-announcement-button {
+.btn-edit {
     background: #eff6ff;
-
     color: #1d4ed8;
 }
 
-
-.edit-announcement-button:hover {
+.btn-edit:hover {
     background: #dbeafe;
 }
 
-
-.delete-announcement-button {
+.btn-delete {
     background: #fef2f2;
-
     color: #dc2626;
 }
 
-
-.delete-announcement-button:hover {
+.btn-delete:hover {
     background: #fee2e2;
 }
 
-
 /* =========================================================
-   MODAL
+   MODAL OVERLAY
 ========================================================= */
 
-.announcement-modal-overlay {
+.modal-overlay {
     position: fixed;
 
     inset: 0;
@@ -659,39 +559,62 @@
     align-items: center;
     justify-content: center;
 
-    background: rgba(15, 23, 42, 0.55);
+    background: rgba(15, 23, 42, 0.58);
+
+    backdrop-filter: blur(4px);
 
     box-sizing: border-box;
 }
 
+/* =========================================================
+   MODAL
+========================================================= */
 
-.announcement-modal {
+.modal-content {
     width: 100%;
-    max-width: 560px;
+    max-width: 570px;
 
     max-height: 90vh;
 
     overflow-y: auto;
 
-    padding: 26px;
+    padding: 27px;
 
     background: #ffffff;
 
-    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+
+    border-radius: 16px;
 
     box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.20);
+        0 25px 70px rgba(0, 0, 0, 0.20);
 
     box-sizing: border-box;
+
+    animation:
+        announcementModalIn 0.2s ease;
 }
 
+@keyframes announcementModalIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
 /* =========================================================
    MODAL HEADER
 ========================================================= */
 
-.announcement-modal-header {
+.modal-header {
     display: flex;
+
     align-items: flex-start;
     justify-content: space-between;
 
@@ -700,18 +623,36 @@
     margin-bottom: 25px;
 }
 
-
-.announcement-modal-header > div:first-child {
-    display: flex;
-    align-items: center;
-
-    gap: 12px;
+.modal-header > div {
+    min-width: 0;
 }
 
+.modal-header h2 {
+    margin: 0;
 
-.modal-title-icon {
-    width: 45px;
-    height: 45px;
+    color: #0f172a;
+
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal-header p {
+    margin: 5px 0 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+/* =========================================================
+   FERMER MODAL
+========================================================= */
+
+.modal-close {
+    width: 34px;
+    height: 34px;
 
     flex-shrink: 0;
 
@@ -719,132 +660,116 @@
     align-items: center;
     justify-content: center;
 
-    border-radius: 10px;
-
-    background: #eff6ff;
-
-    font-size: 22px;
-}
-
-
-.announcement-modal-header h2 {
-    margin: 0;
-
-    color: #111827;
-
-    font-size: 20px;
-}
-
-
-.announcement-modal-header p {
-    margin: 4px 0 0;
-
-    color: #6b7280;
-
-    font-size: 12px;
-}
-
-
-.announcement-modal-close {
-    width: 34px;
-    height: 34px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
     border: none;
-
     border-radius: 50%;
 
-    background: #f3f4f6;
+    background: #f1f5f9;
 
-    color: #374151;
+    color: #475569;
 
-    font-size: 22px;
+    font-size: 21px;
 
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
 }
 
-
-.announcement-modal-close:hover {
-    background: #e5e7eb;
+.modal-close:hover {
+    background: #e2e8f0;
+    color: #0f172a;
 }
 
+.modal-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 /* =========================================================
-   FORM
+   FORMULAIRE
 ========================================================= */
 
-.announcement-form-group {
+.form-group {
     margin-bottom: 19px;
 }
 
-
-.announcement-form-group label {
+.form-group label {
     display: block;
 
     margin-bottom: 7px;
 
-    color: #374151;
+    color: #334155;
 
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 650;
 }
 
-
-.announcement-form-group input,
-.announcement-form-group textarea {
+.form-group input,
+.form-group textarea {
     width: 100%;
 
     padding: 11px 12px;
 
-    border: 1px solid #d1d5db;
-
-    border-radius: 8px;
+    border: 1px solid #d7dee8;
+    border-radius: 9px;
 
     outline: none;
 
     background: #ffffff;
-
-    color: #111827;
+    color: #0f172a;
 
     font-family: inherit;
-
     font-size: 14px;
 
     box-sizing: border-box;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-
-.announcement-form-group input {
-    height: 44px;
+.form-group input {
+    height: 45px;
 }
 
-
-.announcement-form-group textarea {
+.form-group textarea {
     min-height: 150px;
 
     resize: vertical;
 
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
+.form-group input:hover,
+.form-group textarea:hover {
+    border-color: #cbd5e1;
+}
 
-.announcement-form-group input:focus,
-.announcement-form-group textarea:focus {
+.form-group input:focus,
+.form-group textarea:focus {
     border-color: #2563eb;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.08);
+        0 0 0 3px rgba(37, 99, 235, 0.09);
 }
 
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #a0aec0;
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+}
 
 /* =========================================================
-   MODAL BUTTONS
+   BOUTONS MODAL
 ========================================================= */
 
-.announcement-modal-actions {
+.modal-actions {
     margin-top: 25px;
 
     display: flex;
@@ -853,52 +778,40 @@
     gap: 10px;
 }
 
-
-.announcement-cancel-button,
-.announcement-save-button {
+.btn-secondary {
     height: 41px;
 
     padding: 0 17px;
 
     border: none;
+    border-radius: 8px;
 
-    border-radius: 7px;
+    background: #f1f5f9;
+    color: #475569;
 
     font-family: inherit;
 
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 650;
 
     cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
-
-.announcement-cancel-button {
-    background: #f3f4f6;
-
-    color: #374151;
+.btn-secondary:hover {
+    background: #e2e8f0;
 }
 
-
-.announcement-cancel-button:hover {
-    background: #e5e7eb;
+.btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
-
-
-.announcement-save-button {
-    background: #2563eb;
-
-    color: #ffffff;
-}
-
-
-.announcement-save-button:hover {
-    background: #1d4ed8;
-}
-
 
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE TABLET
 ========================================================= */
 
 @media (max-width: 1200px) {
@@ -909,6 +822,9 @@
     }
 }
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
 @media (max-width: 800px) {
 
@@ -916,29 +832,36 @@
         padding: 20px 25px;
     }
 
-    .announcements-content {
-        padding: 25px;
-    }
-
-    .announcements-grid {
-        grid-template-columns: 1fr;
-    }
-
     .announcements-toolbar {
+        padding-left: 25px;
+        padding-right: 25px;
+
         align-items: stretch;
 
         flex-direction: column;
     }
 
-    .announcement-search {
+    .search-input {
         max-width: none;
     }
 
-    .announcement-count {
-        align-self: flex-end;
+    .announcements-grid {
+        padding-left: 25px;
+        padding-right: 25px;
+
+        grid-template-columns: 1fr;
+    }
+
+    .loading-state,
+    .empty-state {
+        margin-left: 25px;
+        margin-right: 25px;
     }
 }
 
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media (max-width: 600px) {
 
@@ -946,17 +869,37 @@
         align-items: flex-start;
 
         flex-direction: column;
+
+        gap: 18px;
     }
 
-    .add-announcement-button {
+    .announcements-header h1 {
+        font-size: 24px;
+    }
+
+    .announcements-header .btn-primary {
         width: 100%;
     }
 
-    .announcements-content {
+    .announcements-toolbar {
+        padding: 20px 20px 0;
+    }
+
+    .announcements-grid {
+        padding: 20px 20px 35px;
+    }
+
+    .loading-state,
+    .empty-state {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .announcement-card {
         padding: 20px;
     }
 
-    .announcement-card-footer {
+    .announcement-footer {
         align-items: flex-start;
 
         flex-direction: column;
@@ -966,8 +909,78 @@
         width: 100%;
     }
 
-    .edit-announcement-button,
-    .delete-announcement-button {
+    .btn-edit,
+    .btn-delete {
         flex: 1;
+    }
+
+    .modal-overlay {
+        padding: 15px;
+    }
+
+    .modal-content {
+        padding: 21px;
+
+        border-radius: 13px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-secondary,
+    .modal-actions .btn-primary {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   PETIT MOBILE
+========================================================= */
+
+@media (max-width: 420px) {
+
+    .announcements-header {
+        padding: 18px;
+    }
+
+    .announcements-toolbar {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .announcements-grid {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .loading-state,
+    .empty-state {
+        margin-left: 18px;
+        margin-right: 18px;
+    }
+
+    .announcement-card {
+        padding: 18px;
+    }
+
+    .announcement-card-title h2 {
+        font-size: 17px;
+    }
+
+    .announcement-actions {
+        width: 100%;
+
+        flex-direction: column;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        width: 100%;
+        flex: none;
+    }
+
+    .modal-content {
+        padding: 18px;
     }
 }

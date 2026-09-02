@@ -1,177 +1,145 @@
 import { useEffect, useState } from "react";
+
 import api from "../services/api";
+
 import Sidebar from "./Sidebar.jsx";
+
 import "./Announcements.css";
 
 export default function Announcements() {
 
+    // =====================================================
+    // UTILISATEUR CONNECTÉ
+    // =====================================================
+
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+
+    // role 1 = Admin
+    // role 2 = Responsable
+    // role 3 = Utilisateur
+
+    const isAdmin =
+        Number(user?.role_id) === 1 ||
+        Number(user?.role) === 1 ||
+        Number(user?.role?.id) === 1 ||
+        user?.role?.name?.toLowerCase() === "admin" ||
+        user?.role?.name?.toLowerCase() === "administrateur" ||
+        user?.role_name?.toLowerCase() === "admin" ||
+        user?.role_name?.toLowerCase() === "administrateur";
+
+    // =====================================================
+    // STATES
+    // =====================================================
+
     const [announcements, setAnnouncements] = useState([]);
-
     const [loading, setLoading] = useState(true);
-
     const [error, setError] = useState("");
-
-    const [success, setSuccess] = useState("");
-
     const [search, setSearch] = useState("");
 
     const [showModal, setShowModal] = useState(false);
-
-    const [editingId, setEditingId] = useState(null);
-
-    const [saving, setSaving] = useState(false);
+    const [editingAnnouncement, setEditingAnnouncement] = useState(null);
 
     const [formData, setFormData] = useState({
         title: "",
         content: "",
     });
 
+    const [saving, setSaving] = useState(false);
 
-    /* =========================================
-       GET ANNOUNCEMENTS
-    ========================================= */
+    // =====================================================
+    // CHARGER LES ANNONCES
+    // =====================================================
 
     const fetchAnnouncements = async () => {
-
-        setLoading(true);
-        setError("");
-
         try {
+            setLoading(true);
+            setError("");
 
             const response = await api.get("/announcements");
 
-            console.log(
-                "Annonces reçues :",
-                response.data
-            );
+            const data = response.data;
 
-            /*
-             * Laravel peut retourner :
-             * [
-             *   ...
-             * ]
-             *
-             * ou :
-             * {
-             *   data: [...]
-             * }
-             */
-
-            const data =
-                Array.isArray(response.data)
-                    ? response.data
-                    : response.data?.data || [];
-
-            setAnnouncements(data);
-
-        } catch (err) {
-
-            console.error(
-                "Erreur récupération annonces :",
-                err
-            );
-
-            if (err.response?.data?.message) {
-
-                setError(
-                    err.response.data.message
-                );
-
+            if (Array.isArray(data)) {
+                setAnnouncements(data);
+            } else if (Array.isArray(data?.data)) {
+                setAnnouncements(data.data);
             } else {
-
-                setError(
-                    "Impossible de récupérer les annonces."
-                );
+                setAnnouncements([]);
             }
 
-        } finally {
+        } catch (err) {
+            console.error("Erreur chargement annonces :", err);
 
+            setError(
+                err?.response?.data?.message ||
+                "Impossible de charger les annonces."
+            );
+
+        } finally {
             setLoading(false);
         }
     };
 
-
-    /* =========================================
-       LOAD
-    ========================================= */
-
     useEffect(() => {
-
         fetchAnnouncements();
-
     }, []);
 
-
-    /* =========================================
-       FORM CHANGE
-    ========================================= */
+    // =====================================================
+    // FORMULAIRE
+    // =====================================================
 
     const handleChange = (e) => {
-
         const { name, value } = e.target;
 
-        setFormData((previous) => ({
-            ...previous,
+        setFormData((prev) => ({
+            ...prev,
             [name]: value,
         }));
     };
 
-
-    /* =========================================
-       OPEN CREATE
-    ========================================= */
+    // =====================================================
+    // OUVRIR MODAL CRÉATION
+    // =====================================================
 
     const openCreateModal = () => {
+        if (!isAdmin) return;
 
-        setEditingId(null);
+        setEditingAnnouncement(null);
 
         setFormData({
             title: "",
             content: "",
         });
 
-        setError("");
-
-        setSuccess("");
-
         setShowModal(true);
     };
 
-
-    /* =========================================
-       OPEN EDIT
-    ========================================= */
+    // =====================================================
+    // OUVRIR MODAL MODIFICATION
+    // =====================================================
 
     const openEditModal = (announcement) => {
+        if (!isAdmin) return;
 
-        setEditingId(announcement.id);
+        setEditingAnnouncement(announcement);
 
         setFormData({
-            title: announcement.title || "",
-            content: announcement.content || "",
+            title: announcement?.title || "",
+            content: announcement?.content || "",
         });
-
-        setError("");
-
-        setSuccess("");
 
         setShowModal(true);
     };
 
-
-    /* =========================================
-       CLOSE MODAL
-    ========================================= */
+    // =====================================================
+    // FERMER MODAL
+    // =====================================================
 
     const closeModal = () => {
-
-        if (saving) {
-            return;
-        }
+        if (saving) return;
 
         setShowModal(false);
-
-        setEditingId(null);
+        setEditingAnnouncement(null);
 
         setFormData({
             title: "",
@@ -179,73 +147,44 @@ export default function Announcements() {
         });
     };
 
-
-    /* =========================================
-       CREATE / UPDATE
-    ========================================= */
+    // =====================================================
+    // CRÉER / MODIFIER
+    // =====================================================
 
     const handleSubmit = async (e) => {
-
         e.preventDefault();
 
-        setError("");
-
-        setSuccess("");
+        if (!isAdmin) return;
 
         if (!formData.title.trim()) {
-
-            setError(
-                "Le titre de l'annonce est obligatoire."
-            );
-
+            alert("Veuillez saisir le titre de l'annonce.");
             return;
         }
 
         if (!formData.content.trim()) {
-
-            setError(
-                "Le contenu de l'annonce est obligatoire."
-            );
-
+            alert("Veuillez saisir le contenu de l'annonce.");
             return;
         }
 
-        setSaving(true);
-
         try {
+            setSaving(true);
 
-            if (editingId) {
+            const data = {
+                title: formData.title.trim(),
+                content: formData.content.trim(),
+            };
 
+            if (editingAnnouncement) {
                 await api.put(
-                    `/announcements/${editingId}`,
-                    {
-                        title: formData.title,
-                        content: formData.content,
-                    }
+                    `/announcements/${editingAnnouncement.id}`,
+                    data
                 );
-
-                setSuccess(
-                    "Annonce modifiée avec succès."
-                );
-
             } else {
-
-                await api.post(
-                    "/announcements",
-                    {
-                        title: formData.title,
-                        content: formData.content,
-                    }
-                );
-
-                setSuccess(
-                    "Annonce créée avec succès."
-                );
+                await api.post("/announcements", data);
             }
 
             setShowModal(false);
-
-            setEditingId(null);
+            setEditingAnnouncement(null);
 
             setFormData({
                 title: "",
@@ -255,656 +194,530 @@ export default function Announcements() {
             await fetchAnnouncements();
 
         } catch (err) {
+            console.error("Erreur sauvegarde annonce :", err);
 
-            console.error(
-                "Erreur sauvegarde annonce :",
-                err
+            alert(
+                err?.response?.data?.message ||
+                "Une erreur est survenue lors de l'enregistrement."
             );
 
-            if (err.response?.data?.message) {
-
-                setError(
-                    err.response.data.message
-                );
-
-            } else if (
-                err.response?.data?.errors
-            ) {
-
-                const errors =
-                    err.response.data.errors;
-
-                const firstError =
-                    Object.values(errors)?.[0]?.[0];
-
-                setError(
-                    firstError ||
-                    "Erreur de validation."
-                );
-
-            } else {
-
-                setError(
-                    "Impossible d'enregistrer l'annonce."
-                );
-            }
-
         } finally {
-
             setSaving(false);
         }
     };
 
+    // =====================================================
+    // SUPPRIMER
+    // =====================================================
 
-    /* =========================================
-       DELETE
-    ========================================= */
-
-    const handleDelete = async (id) => {
+    const handleDelete = async (announcement) => {
+        if (!isAdmin) return;
 
         const confirmed = window.confirm(
-            "Voulez-vous vraiment supprimer cette annonce ?"
+            `Voulez-vous vraiment supprimer l'annonce "${announcement?.title || ""}" ?`
         );
 
-        if (!confirmed) {
-            return;
-        }
-
-        setError("");
-
-        setSuccess("");
+        if (!confirmed) return;
 
         try {
-
-            await api.delete(
-                `/announcements/${id}`
-            );
-
-            setSuccess(
-                "Annonce supprimée avec succès."
-            );
+            await api.delete(`/announcements/${announcement.id}`);
 
             await fetchAnnouncements();
 
         } catch (err) {
+            console.error("Erreur suppression annonce :", err);
 
-            console.error(
-                "Erreur suppression annonce :",
-                err
+            alert(
+                err?.response?.data?.message ||
+                "Impossible de supprimer cette annonce."
             );
-
-            if (err.response?.data?.message) {
-
-                setError(
-                    err.response.data.message
-                );
-
-            } else {
-
-                setError(
-                    "Impossible de supprimer l'annonce."
-                );
-            }
         }
     };
 
-
-    /* =========================================
-       SEARCH
-    ========================================= */
-
-    const filteredAnnouncements =
-        announcements.filter((announcement) => {
-
-            const title =
-                announcement.title || "";
-
-            const content =
-                announcement.content || "";
-
-            const author =
-                announcement.user
-                    ? `${announcement.user.first_name || ""} ${announcement.user.last_name || ""}`
-                    : "";
-
-            const text = `
-                ${title}
-                ${content}
-                ${author}
-            `.toLowerCase();
-
-            return text.includes(
-                search.toLowerCase()
-            );
-        });
-
-
-    /* =========================================
-       DATE
-    ========================================= */
+    // =====================================================
+    // FORMAT DATE
+    // =====================================================
 
     const formatDate = (date) => {
-
-        if (!date) {
-            return "";
-        }
+        if (!date) return "";
 
         try {
-
-            return new Date(date).toLocaleDateString(
-                "fr-FR",
-                {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                }
-            );
-
+            return new Date(date).toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            });
         } catch {
-
-            return date;
+            return "";
         }
     };
 
-
-    /* =========================================
-       AUTHOR
-    ========================================= */
+    // =====================================================
+    // NOM AUTEUR
+    // =====================================================
 
     const getAuthorName = (announcement) => {
 
-        if (!announcement.user) {
-            return "Utilisateur";
+        if (announcement?.author) {
+
+            const firstName =
+                announcement.author.first_name ||
+                announcement.author.firstname ||
+                "";
+
+            const lastName =
+                announcement.author.last_name ||
+                announcement.author.lastname ||
+                "";
+
+            const fullName = `${firstName} ${lastName}`.trim();
+
+            if (fullName) {
+                return fullName;
+            }
+
+            if (announcement.author.name) {
+                return announcement.author.name;
+            }
+
+            if (announcement.author.email) {
+                return announcement.author.email;
+            }
         }
 
-        const firstName =
-            announcement.user.first_name || "";
+        if (announcement?.user) {
 
-        const lastName =
-            announcement.user.last_name || "";
+            const firstName =
+                announcement.user.first_name ||
+                announcement.user.firstname ||
+                "";
 
-        const fullName =
-            `${firstName} ${lastName}`.trim();
+            const lastName =
+                announcement.user.last_name ||
+                announcement.user.lastname ||
+                "";
 
-        return fullName || "Utilisateur";
+            const fullName = `${firstName} ${lastName}`.trim();
+
+            if (fullName) {
+                return fullName;
+            }
+
+            if (announcement.user.name) {
+                return announcement.user.name;
+            }
+
+            if (announcement.user.email) {
+                return announcement.user.email;
+            }
+        }
+
+        return "Administrateur";
     };
 
+    // =====================================================
+    // RECHERCHE
+    // =====================================================
 
-    /* =========================================
-       AUTHOR INITIAL
-    ========================================= */
+    const filteredAnnouncements = announcements.filter((announcement) => {
 
-    const getAuthorInitial = (announcement) => {
+        const searchValue = search.toLowerCase().trim();
 
-        const name =
-            getAuthorName(announcement);
+        if (!searchValue) {
+            return true;
+        }
+
+        const title = String(
+            announcement?.title || ""
+        ).toLowerCase();
+
+        const content = String(
+            announcement?.content || ""
+        ).toLowerCase();
+
+        const author = getAuthorName(
+            announcement
+        ).toLowerCase();
 
         return (
-            name.charAt(0).toUpperCase() ||
-            "U"
+            title.includes(searchValue) ||
+            content.includes(searchValue) ||
+            author.includes(searchValue)
         );
-    };
+    });
 
-
-    /* =========================================
-       RETURN
-    ========================================= */
+    // =====================================================
+    // RENDU
+    // =====================================================
 
     return (
-        <div className="announcements-page">
-
-            {/* =====================================
-                SIDEBAR
-            ====================================== */}
+        <div className="app-layout">
 
             <Sidebar />
 
+            <main className="announcements-page">
 
-            {/* =====================================
-                MAIN
-            ====================================== */}
-
-            <main className="announcements-main">
-
-                {/* =================================
+                {/* =====================================================
                     HEADER
-                ================================== */}
+                ===================================================== */}
 
-                <header className="announcements-header">
+                <div className="announcements-header">
 
                     <div>
-
-                        <h1>
-                            Annonces
-                        </h1>
+                        <h1>📢 Annonces</h1>
 
                         <p>
-                            Consultez et gérez les annonces
-                            de la plateforme.
+                            Consultez les dernières annonces et
+                            informations importantes.
+                        </p>
+                    </div>
+
+                    {isAdmin && (
+                        <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={openCreateModal}
+                        >
+                            + Nouvelle annonce
+                        </button>
+                    )}
+
+                </div>
+
+                {/* =====================================================
+                    RECHERCHE
+                ===================================================== */}
+
+                <div className="announcements-toolbar">
+
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Rechercher une annonce..."
+                        className="search-input"
+                    />
+
+                </div>
+
+                {/* =====================================================
+                    ERREUR
+                ===================================================== */}
+
+                {error && (
+                    <div className="error-message">
+                        {error}
+                    </div>
+                )}
+
+                {/* =====================================================
+                    LOADING
+                ===================================================== */}
+
+                {loading ? (
+
+                    <div className="loading-state">
+                        Chargement des annonces...
+                    </div>
+
+                ) : filteredAnnouncements.length === 0 ? (
+
+                    /* =================================================
+                       AUCUNE ANNONCE
+                    ================================================= */
+
+                    <div className="empty-state">
+
+                        <div className="empty-icon">
+                            📢
+                        </div>
+
+                        <h2>
+                            {search
+                                ? "Aucune annonce trouvée"
+                                : "Aucune annonce"}
+                        </h2>
+
+                        <p>
+                            {search
+                                ? "Aucune annonce ne correspond à votre recherche."
+                                : "Il n'y a actuellement aucune annonce disponible."}
                         </p>
 
-                    </div>
-
-
-                    <button
-                        type="button"
-                        className="add-announcement-button"
-                        onClick={openCreateModal}
-                    >
-
-                        <span>
-                            +
-                        </span>
-
-                        Nouvelle annonce
-
-                    </button>
-
-                </header>
-
-
-                {/* =================================
-                    CONTENT
-                ================================== */}
-
-                <section className="announcements-content">
-
-
-                    {/* ==============================
-                        ALERT ERROR
-                    =============================== */}
-
-                    {error && (
-
-                        <div className="announcement-alert error">
-
-                            {error}
-
-                        </div>
-
-                    )}
-
-
-                    {/* ==============================
-                        ALERT SUCCESS
-                    =============================== */}
-
-                    {success && (
-
-                        <div className="announcement-alert success">
-
-                            {success}
-
-                        </div>
-
-                    )}
-
-
-                    {/* ==============================
-                        TOOLBAR
-                    =============================== */}
-
-                    <div className="announcements-toolbar">
-
-                        <div className="announcement-search">
-
-                            <span>
-                                🔍
-                            </span>
-
-                            <input
-                                type="text"
-                                placeholder="Rechercher une annonce..."
-                                value={search}
-                                onChange={(e) =>
-                                    setSearch(e.target.value)
-                                }
-                            />
-
-                        </div>
-
-
-                        <div className="announcement-count">
-
-                            <strong>
-                                {filteredAnnouncements.length}
-                            </strong>
-
-                            annonce(s)
-
-                        </div>
-
-                    </div>
-
-
-                    {/* ==============================
-                        LOADING
-                    =============================== */}
-
-                    {loading && (
-
-                        <div className="announcement-loading">
-
-                            Chargement des annonces...
-
-                        </div>
-
-                    )}
-
-
-                    {/* ==============================
-                        EMPTY
-                    =============================== */}
-
-                    {!loading &&
-                        filteredAnnouncements.length === 0 && (
-
-                            <div className="empty-announcements">
-
-                                <div className="empty-announcement-icon">
-                                    📢
-                                </div>
-
-                                <h2>
-                                    Aucune annonce
-                                </h2>
-
-                                <p>
-                                    {search
-                                        ? "Aucune annonce ne correspond à votre recherche."
-                                        : "Aucune annonce n'a encore été publiée."
-                                    }
-                                </p>
-
-                                {!search && (
-
-                                    <button
-                                        type="button"
-                                        onClick={openCreateModal}
-                                    >
-                                        Créer une annonce
-                                    </button>
-
-                                )}
-
-                            </div>
-
+                        {isAdmin && !search && (
+                            <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={openCreateModal}
+                            >
+                                + Créer une annonce
+                            </button>
                         )}
 
+                    </div>
 
-                    {/* ==============================
-                        CARDS
-                    =============================== */}
+                ) : (
 
-                    {!loading &&
-                        filteredAnnouncements.length > 0 && (
+                    /* =================================================
+                       LISTE DES ANNONCES
+                    ================================================= */
 
-                            <div className="announcements-grid">
+                    <div className="announcements-grid">
 
-                                {filteredAnnouncements.map(
-                                    (announcement) => (
+                        {filteredAnnouncements.map(
+                            (announcement, index) => {
 
-                                        <article
-                                            className="announcement-card"
-                                            key={announcement.id}
-                                        >
+                                const announcementKey =
+                                    announcement?.id !== undefined &&
+                                    announcement?.id !== null
+                                        ? `announcement-${announcement.id}`
+                                        : `announcement-fallback-${index}-${announcement?.title || "item"}`;
 
-                                            <div className="announcement-card-top">
+                                return (
+                                    <article
+                                        className="announcement-card"
+                                        key={announcementKey}
+                                    >
 
-                                                <div className="announcement-icon">
-                                                    📢
-                                                </div>
+                                        {/* =============================
+                                            CARD HEADER
+                                        ============================== */}
 
-                                                <span className="announcement-card-date">
+                                        <div className="announcement-card-header">
 
+                                            <div className="announcement-icon">
+                                                📢
+                                            </div>
+
+                                            <div className="announcement-card-title">
+
+                                                <h2>
+                                                    {announcement?.title ||
+                                                        "Sans titre"}
+                                                </h2>
+
+                                                <span>
                                                     {formatDate(
-                                                        announcement.created_at
+                                                        announcement?.created_at ||
+                                                        announcement?.createdAt
                                                     )}
-
                                                 </span>
 
                                             </div>
 
+                                        </div>
 
-                                            <h2>
-                                                {announcement.title}
-                                            </h2>
+                                        {/* =============================
+                                            CONTENU
+                                        ============================== */}
 
+                                        <div className="announcement-content">
 
-                                            <p className="announcement-content-text">
-
-                                                {announcement.content}
-
+                                            <p>
+                                                {announcement?.content ||
+                                                    "Aucun contenu."}
                                             </p>
 
+                                        </div>
 
-                                            <div className="announcement-card-footer">
+                                        {/* =============================
+                                            FOOTER
+                                        ============================== */}
 
+                                        <div className="announcement-footer">
 
-                                                {/* AUTHOR */}
+                                            <div className="announcement-author">
 
-                                                <div className="announcement-author">
+                                                <span className="author-icon">
+                                                    👤
+                                                </span>
 
-                                                    <div className="announcement-avatar">
+                                                <span>
+                                                    {getAuthorName(
+                                                        announcement
+                                                    )}
+                                                </span>
 
-                                                        {getAuthorInitial(
-                                                            announcement
-                                                        )}
+                                            </div>
 
-                                                    </div>
+                                            {/* =========================
+                                                ACTIONS ADMIN
+                                            ========================== */}
 
-                                                    <div>
-
-                                                        <strong>
-                                                            {getAuthorName(
-                                                                announcement
-                                                            )}
-                                                        </strong>
-
-                                                        <span>
-                                                            Auteur
-                                                        </span>
-
-                                                    </div>
-
-                                                </div>
-
-
-                                                {/* ACTIONS */}
+                                            {isAdmin && (
 
                                                 <div className="announcement-actions">
 
                                                     <button
                                                         type="button"
-                                                        className="edit-announcement-button"
+                                                        className="btn-edit"
                                                         onClick={() =>
                                                             openEditModal(
                                                                 announcement
                                                             )
                                                         }
                                                     >
-                                                        Modifier
+                                                        ✏️ Modifier
                                                     </button>
-
 
                                                     <button
                                                         type="button"
-                                                        className="delete-announcement-button"
+                                                        className="btn-delete"
                                                         onClick={() =>
                                                             handleDelete(
-                                                                announcement.id
+                                                                announcement
                                                             )
                                                         }
                                                     >
-                                                        Supprimer
+                                                        🗑️ Supprimer
                                                     </button>
 
                                                 </div>
 
-                                            </div>
+                                            )}
 
-                                        </article>
+                                        </div>
 
-                                    )
-                                )}
-
-                            </div>
-
+                                    </article>
+                                );
+                            }
                         )}
 
-                </section>
+                    </div>
 
-            </main>
+                )}
 
+                {/* =====================================================
+                    MODAL CRÉATION / MODIFICATION
+                ===================================================== */}
 
-            {/* =====================================
-                MODAL
-            ====================================== */}
+                {showModal && isAdmin && (
 
-            {showModal && (
+                    <div
+                        className="modal-overlay"
+                        onMouseDown={(e) => {
+                            if (e.target === e.currentTarget) {
+                                closeModal();
+                            }
+                        }}
+                    >
 
-                <div
-                    className="announcement-modal-overlay"
-                    onMouseDown={(e) => {
+                        <div className="modal-content">
 
-                        if (
-                            e.target === e.currentTarget &&
-                            !saving
-                        ) {
-                            closeModal();
-                        }
+                            {/* =============================
+                                MODAL HEADER
+                            ============================== */}
 
-                    }}
-                >
-
-                    <div className="announcement-modal">
-
-
-                        {/* MODAL HEADER */}
-
-                        <div className="announcement-modal-header">
-
-                            <div>
-
-                                <div className="modal-title-icon">
-                                    📢
-                                </div>
+                            <div className="modal-header">
 
                                 <div>
 
                                     <h2>
-                                        {editingId
+                                        {editingAnnouncement
                                             ? "Modifier l'annonce"
-                                            : "Nouvelle annonce"
-                                        }
+                                            : "Nouvelle annonce"}
                                     </h2>
 
                                     <p>
-                                        {editingId
+                                        {editingAnnouncement
                                             ? "Modifiez les informations de l'annonce."
-                                            : "Publiez une nouvelle annonce."
-                                        }
+                                            : "Créez une nouvelle annonce pour les utilisateurs."}
                                     </p>
 
                                 </div>
 
-                            </div>
-
-
-                            <button
-                                type="button"
-                                className="announcement-modal-close"
-                                onClick={closeModal}
-                                disabled={saving}
-                            >
-                                ×
-                            </button>
-
-                        </div>
-
-
-                        {/* FORM */}
-
-                        <form onSubmit={handleSubmit}>
-
-
-                            <div className="announcement-form-group">
-
-                                <label htmlFor="announcement-title">
-                                    Titre
-                                </label>
-
-                                <input
-                                    id="announcement-title"
-                                    type="text"
-                                    name="title"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    placeholder="Titre de l'annonce"
-                                    maxLength={255}
-                                    required
-                                />
-
-                            </div>
-
-
-                            <div className="announcement-form-group">
-
-                                <label htmlFor="announcement-content">
-                                    Contenu
-                                </label>
-
-                                <textarea
-                                    id="announcement-content"
-                                    name="content"
-                                    value={formData.content}
-                                    onChange={handleChange}
-                                    placeholder="Écrivez le contenu de l'annonce..."
-                                    rows="7"
-                                    required
-                                />
-
-                            </div>
-
-
-                            {/* ACTIONS */}
-
-                            <div className="announcement-modal-actions">
-
                                 <button
                                     type="button"
-                                    className="announcement-cancel-button"
+                                    className="modal-close"
                                     onClick={closeModal}
                                     disabled={saving}
                                 >
-                                    Annuler
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    className="announcement-save-button"
-                                    disabled={saving}
-                                >
-
-                                    {saving
-                                        ? "Enregistrement..."
-                                        : editingId
-                                            ? "Modifier"
-                                            : "Publier"
-                                    }
-
+                                    ×
                                 </button>
 
                             </div>
 
-                        </form>
+                            {/* =============================
+                                FORMULAIRE
+                            ============================== */}
+
+                            <form onSubmit={handleSubmit}>
+
+                                <div className="form-group">
+
+                                    <label htmlFor="announcement-title">
+                                        Titre
+                                    </label>
+
+                                    <input
+                                        id="announcement-title"
+                                        type="text"
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleChange}
+                                        placeholder="Titre de l'annonce"
+                                        disabled={saving}
+                                        maxLength={255}
+                                    />
+
+                                </div>
+
+                                <div className="form-group">
+
+                                    <label htmlFor="announcement-content">
+                                        Contenu
+                                    </label>
+
+                                    <textarea
+                                        id="announcement-content"
+                                        name="content"
+                                        value={formData.content}
+                                        onChange={handleChange}
+                                        placeholder="Écrivez le contenu de l'annonce..."
+                                        rows={7}
+                                        disabled={saving}
+                                    />
+
+                                </div>
+
+                                {/* =============================
+                                    MODAL ACTIONS
+                                ============================== */}
+
+                                <div className="modal-actions">
+
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={closeModal}
+                                        disabled={saving}
+                                    >
+                                        Annuler
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        className="btn-primary"
+                                        disabled={saving}
+                                    >
+                                        {saving
+                                            ? "Enregistrement..."
+                                            : editingAnnouncement
+                                            ? "Enregistrer les modifications"
+                                            : "Publier l'annonce"}
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        </div>
 
                     </div>
 
-                </div>
+                )}
 
-            )}
+            </main>
 
         </div>
     );

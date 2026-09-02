@@ -2,12 +2,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import Sidebar from "./components/pages/Sidebar.jsx";
-
 import Login from "./components/pages/Login.jsx";
 import Dashboard from "./components/pages/Dashboard.jsx";
 import Documents from "./components/pages/Documents.jsx";
 import DocumentDetails from "./components/pages/DocumentDetails.jsx";
 import Folders from "./components/pages/Folders.jsx";
+import FolderDetails from "./components/pages/FolderDetails.jsx";
 import Spaces from "./components/pages/Spaces.jsx";
 import SpaceDetails from "./components/pages/SpaceDetails.jsx";
 import Users from "./components/pages/Users.jsx";
@@ -19,22 +19,13 @@ import Trash from "./components/pages/Trash.jsx";
 import "./App.css";
 
 export default function App() {
-
-    const [sidebarCollapsed, setSidebarCollapsed] =
-        useState(() => {
-            return (
-                localStorage.getItem(
-                    "sidebarCollapsed"
-                ) === "true"
-            );
-        });
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        return localStorage.getItem("sidebarCollapsed") === "true";
+    });
 
     useEffect(() => {
-
         const handleSidebarChange = (event) => {
-            setSidebarCollapsed(
-                event.detail.collapsed
-            );
+            setSidebarCollapsed(event.detail.collapsed);
         };
 
         window.addEventListener(
@@ -48,7 +39,6 @@ export default function App() {
                 handleSidebarChange
             );
         };
-
     }, []);
 
     const Page = ({ children }) => (
@@ -57,9 +47,7 @@ export default function App() {
 
             <main
                 className={`app-page ${
-                    sidebarCollapsed
-                        ? "app-page-collapsed"
-                        : ""
+                    sidebarCollapsed ? "app-page-collapsed" : ""
                 }`}
             >
                 {children}
@@ -71,14 +59,12 @@ export default function App() {
         <Routes>
 
             {/* LOGIN */}
-
             <Route
                 path="/login"
                 element={<Login />}
             />
 
             {/* DASHBOARD */}
-
             <Route
                 path="/dashboard"
                 element={
@@ -89,7 +75,6 @@ export default function App() {
             />
 
             {/* DOCUMENTS */}
-
             <Route
                 path="/documents"
                 element={
@@ -100,7 +85,6 @@ export default function App() {
             />
 
             {/* DOCUMENT DETAILS */}
-
             <Route
                 path="/documents/:id"
                 element={
@@ -111,7 +95,6 @@ export default function App() {
             />
 
             {/* FOLDERS */}
-
             <Route
                 path="/folders"
                 element={
@@ -121,8 +104,17 @@ export default function App() {
                 }
             />
 
-            {/* SPACES */}
+            {/* FOLDER DETAILS */}
+            <Route
+                path="/folders/:id"
+                element={
+                    <Page>
+                        <FolderDetails />
+                    </Page>
+                }
+            />
 
+            {/* SPACES */}
             <Route
                 path="/spaces"
                 element={
@@ -133,7 +125,6 @@ export default function App() {
             />
 
             {/* SPACE DETAILS */}
-
             <Route
                 path="/spaces/:id"
                 element={
@@ -144,7 +135,6 @@ export default function App() {
             />
 
             {/* USERS */}
-
             <Route
                 path="/users"
                 element={
@@ -155,7 +145,6 @@ export default function App() {
             />
 
             {/* ANNOUNCEMENTS */}
-
             <Route
                 path="/announcements"
                 element={
@@ -166,7 +155,6 @@ export default function App() {
             />
 
             {/* NOTIFICATIONS */}
-
             <Route
                 path="/notifications"
                 element={
@@ -177,7 +165,6 @@ export default function App() {
             />
 
             {/* SETTINGS */}
-
             <Route
                 path="/settings"
                 element={
@@ -188,7 +175,6 @@ export default function App() {
             />
 
             {/* TRASH */}
-
             <Route
                 path="/trash"
                 element={
@@ -199,7 +185,6 @@ export default function App() {
             />
 
             {/* RACINE */}
-
             <Route
                 path="/"
                 element={
@@ -211,7 +196,6 @@ export default function App() {
             />
 
             {/* PAGE INEXISTANTE */}
-
             <Route
                 path="*"
                 element={
