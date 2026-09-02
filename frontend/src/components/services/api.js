@@ -1,13 +1,7 @@
 
 import axios from "axios";
 
-const isLocal =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-
-const API_URL = isLocal
-    ? "http://127.0.0.1:8000/api"
-    : "https://otmane-ged.infinityfreeapp.com/api";
+const API_URL = "http://127.0.0.1:8000/api";
 
 console.log("Frontend:", window.location.origin);
 console.log("API:", API_URL);
@@ -35,4 +29,3 @@ api.interceptors.request.use(
 );
 
 export default api;
-

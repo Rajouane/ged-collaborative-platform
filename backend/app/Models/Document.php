@@ -27,12 +27,9 @@ class Document extends Model
         'deleted_at' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | USER
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * Utilisateur propriétaire du document
+     */
     public function user()
     {
         return $this->belongsTo(
@@ -41,12 +38,9 @@ class Document extends Model
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | FOLDER
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * Dossier du document
+     */
     public function folder()
     {
         return $this->belongsTo(
@@ -55,12 +49,9 @@ class Document extends Model
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SPACE
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * Espace du document
+     */
     public function space()
     {
         return $this->belongsTo(

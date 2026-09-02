@@ -33,14 +33,6 @@ Route::post(
 // ======================================================
 // DOCUMENT PREVIEW - PUBLIC
 // ======================================================
-//
-// Cette route reste hors auth:sanctum afin de permettre
-// au navigateur d'ouvrir directement un PDF ou une image.
-//
-// Exemple :
-// http://127.0.0.1:8000/api/documents/1/preview
-//
-// ======================================================
 
 Route::get(
     '/documents/{document}/preview',
@@ -136,13 +128,6 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     | LIST DOCUMENTS
     |--------------------------------------------------------------------------
-    |
-    | GET /api/documents
-    |
-    | Pour un espace :
-    |
-    | GET /api/documents?space_id=1
-    |
     */
 
     Route::get(
@@ -153,12 +138,55 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | TRASH - LIST
+    |--------------------------------------------------------------------------
+    |
+    | GET /api/documents/trash
+    |
+    */
+
+    Route::get(
+        '/documents/trash',
+        [DocumentController::class, 'trash']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRASH - RESTORE
+    |--------------------------------------------------------------------------
+    |
+    | PUT /api/documents/{document}/restore
+    |
+    */
+
+    Route::put(
+        '/documents/{document}/restore',
+        [DocumentController::class, 'restore']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRASH - EMPTY
+    |--------------------------------------------------------------------------
+    |
+    | DELETE /api/documents/trash/empty
+    |
+    */
+
+    Route::delete(
+        '/documents/trash/empty',
+        [DocumentController::class, 'emptyTrash']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | ADD DOCUMENT
     |--------------------------------------------------------------------------
     |
     | POST /api/documents
-    |
-    | Le fichier est envoyé avec FormData.
     |
     */
 
@@ -185,6 +213,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | FORCE DELETE
+    |--------------------------------------------------------------------------
+    |
+    | DELETE /api/documents/{document}/force
+    |
+    */
+
+    Route::delete(
+        '/documents/{document}/force',
+        [DocumentController::class, 'forceDelete']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | SHOW DOCUMENT
     |--------------------------------------------------------------------------
     |
@@ -200,7 +243,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | DELETE DOCUMENT
+    | DELETE -> TRASH
     |--------------------------------------------------------------------------
     |
     | DELETE /api/documents/{document}
@@ -229,59 +272,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // SPACES
     // ==================================================
 
-    /*
-    |--------------------------------------------------------------------------
-    | LIST SPACES
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/spaces',
         [SpaceController::class, 'index']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE SPACE
-    |--------------------------------------------------------------------------
-    */
 
     Route::post(
         '/spaces',
         [SpaceController::class, 'store']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | USERS AVAILABLE FOR SPACE
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/spaces/users',
         [SpaceController::class, 'users']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW SPACE
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/spaces/{space}',
         [SpaceController::class, 'show']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE SPACE
-    |--------------------------------------------------------------------------
-    */
 
     Route::put(
         '/spaces/{space}',
@@ -293,13 +302,6 @@ Route::middleware('auth:sanctum')->group(function () {
         [SpaceController::class, 'update']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE SPACE
-    |--------------------------------------------------------------------------
-    */
-
     Route::delete(
         '/spaces/{space}',
         [SpaceController::class, 'destroy']
@@ -310,53 +312,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // SPACE MEMBERS
     // ==================================================
 
-    /*
-    |--------------------------------------------------------------------------
-    | LIST MEMBERS
-    |--------------------------------------------------------------------------
-    |
-    | GET /api/spaces/{space}/members
-    |
-    */
-
     Route::get(
         '/spaces/{space}/members',
         [SpaceMemberController::class, 'index']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADD MEMBER
-    |--------------------------------------------------------------------------
-    |
-    | POST /api/spaces/{space}/members
-    |
-    */
 
     Route::post(
         '/spaces/{space}/members',
         [SpaceMemberController::class, 'store']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE MEMBER
-    |--------------------------------------------------------------------------
-    */
-
     Route::put(
         '/spaces/{space}/members/{user}',
         [SpaceMemberController::class, 'update']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | REMOVE MEMBER
-    |--------------------------------------------------------------------------
-    */
 
     Route::delete(
         '/spaces/{space}/members/{user}',
@@ -378,59 +347,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // NOTIFICATIONS
     // ==================================================
 
-    /*
-    |--------------------------------------------------------------------------
-    | LIST NOTIFICATIONS
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/notifications',
         [NotificationController::class, 'index']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | MARK ALL AS READ
-    |--------------------------------------------------------------------------
-    */
 
     Route::put(
         '/notifications/read-all',
         [NotificationController::class, 'markAllAsRead']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW NOTIFICATION
-    |--------------------------------------------------------------------------
-    */
-
     Route::get(
         '/notifications/{notification}',
         [NotificationController::class, 'show']
     );
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | MARK NOTIFICATION AS READ
-    |--------------------------------------------------------------------------
-    */
-
     Route::put(
         '/notifications/{notification}',
         [NotificationController::class, 'update']
     );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE NOTIFICATION
-    |--------------------------------------------------------------------------
-    */
 
     Route::delete(
         '/notifications/{notification}',

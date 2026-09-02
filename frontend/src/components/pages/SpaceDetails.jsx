@@ -40,6 +40,14 @@ export default function SpaceDetails() {
     const [uploading, setUploading] = useState(false);
     const [creatingFolder, setCreatingFolder] = useState(false);
 
+    /* =========================================================
+       SUPPRESSION ESPACE (ADMIN)
+    ========================================================= */
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
+
     const [documentForm, setDocumentForm] = useState({
         title: "",
         description: "",
@@ -52,6 +60,30 @@ export default function SpaceDetails() {
         description: "",
         parent_id: "",
     });
+
+    /* =========================================================
+       UTILISATEUR COURANT / ROLE
+    ========================================================= */
+
+    const getCurrentUser = () => {
+        try {
+            const storedUser = localStorage.getItem("user");
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (error) {
+            console.error("Erreur utilisateur:", error);
+            return null;
+        }
+    };
+
+    const currentUser = getCurrentUser();
+
+    const isAdmin =
+        Number(currentUser?.role_id) === 1 ||
+        currentUser?.role?.id === 1 ||
+        currentUser?.role?.name?.toLowerCase() === "admin" ||
+        currentUser?.role?.name?.toLowerCase() === "administrateur" ||
+        currentUser?.role_name?.toLowerCase() === "admin" ||
+        currentUser?.role_name?.toLowerCase() === "administrateur";
 
     /* =========================================================
        HELPERS API
@@ -82,9 +114,7 @@ export default function SpaceDetails() {
     ========================================================= */
 
     const loadSpace = async () => {
-        const response = await api.get(
-            `/spaces/${id}`
-        );
+        const response = await api.get(`/spaces/${id}`);
 
         const data = extractObject(response);
 
@@ -101,19 +131,12 @@ export default function SpaceDetails() {
 
     const loadMembers = async () => {
         try {
-            const response = await api.get(
-                `/spaces/${id}/members`
-            );
+            const response = await api.get(`/spaces/${id}/members`);
 
-            setMembers(
-                extractData(response)
-            );
+            setMembers(extractData(response));
 
         } catch (err) {
-            console.error(
-                "Erreur membres:",
-                err
-            );
+            console.error("Erreur membres:", err);
 
             setMembers([]);
         }
@@ -132,9 +155,7 @@ export default function SpaceDetails() {
              * On utilise /spaces/users
              * car cette route existe dans api.php.
              */
-            const response = await api.get(
-                "/spaces/users"
-            );
+            const response = await api.get("/spaces/users");
 
             let data = extractData(response);
 
@@ -148,40 +169,30 @@ export default function SpaceDetails() {
              * ou une pagination Laravel.
              */
 
-            if (
-                !data.length &&
-                Array.isArray(response?.data?.data)
-            ) {
+            if (!data.length && Array.isArray(response?.data?.data)) {
                 data = response.data.data;
             }
 
             /*
              * IDs des membres actuels
              */
-            const existingMemberIds =
-                members.map((member) => {
-                    const user = getUser(member);
-                    return Number(user?.id);
-                });
+            const existingMemberIds = members.map((member) => {
+                const user = getUser(member);
+                return Number(user?.id);
+            });
 
             /*
              * On retire les utilisateurs
              * déjà membres de l'espace.
              */
             const availableUsers = data.filter(
-                (user) =>
-                    !existingMemberIds.includes(
-                        Number(user.id)
-                    )
+                (user) => !existingMemberIds.includes(Number(user.id))
             );
 
             setUsers(availableUsers);
 
         } catch (err) {
-            console.error(
-                "Erreur utilisateurs:",
-                err
-            );
+            console.error("Erreur utilisateurs:", err);
 
             setMemberError(
                 err.response?.data?.message ||
@@ -203,24 +214,16 @@ export default function SpaceDetails() {
         try {
             setDocumentsLoading(true);
 
-            const response = await api.get(
-                "/documents",
-                {
-                    params: {
-                        space_id: id,
-                    },
-                }
-            );
+            const response = await api.get("/documents", {
+                params: {
+                    space_id: id,
+                },
+            });
 
-            setDocuments(
-                extractData(response)
-            );
+            setDocuments(extractData(response));
 
         } catch (err) {
-            console.error(
-                "Erreur documents:",
-                err
-            );
+            console.error("Erreur documents:", err);
 
             setDocuments([]);
 
@@ -237,24 +240,16 @@ export default function SpaceDetails() {
         try {
             setFoldersLoading(true);
 
-            const response = await api.get(
-                "/folders",
-                {
-                    params: {
-                        space_id: id,
-                    },
-                }
-            );
+            const response = await api.get("/folders", {
+                params: {
+                    space_id: id,
+                },
+            });
 
-            setFolders(
-                extractData(response)
-            );
+            setFolders(extractData(response));
 
         } catch (err) {
-            console.error(
-                "Erreur dossiers:",
-                err
-            );
+            console.error("Erreur dossiers:", err);
 
             setFolders([]);
 
@@ -286,10 +281,7 @@ export default function SpaceDetails() {
                 ]);
 
             } catch (err) {
-                console.error(
-                    "Erreur espace:",
-                    err
-                );
+                console.error("Erreur espace:", err);
 
                 setError(
                     err.response?.data?.message ||
@@ -319,10 +311,9 @@ export default function SpaceDetails() {
             return "Utilisateur";
         }
 
-        const fullName =
-            `${user.first_name || ""} ${
-                user.last_name || ""
-            }`.trim();
+        const fullName = `${user.first_name || ""} ${
+            user.last_name || ""
+        }`.trim();
 
         return (
             fullName ||
@@ -334,9 +325,7 @@ export default function SpaceDetails() {
 
     const getInitial = (member) => {
         return (
-            getUserName(member)
-                ?.charAt(0)
-                ?.toUpperCase() ||
+            getUserName(member)?.charAt(0)?.toUpperCase() ||
             "U"
         );
     };
@@ -366,10 +355,7 @@ export default function SpaceDetails() {
             return "FILE";
         }
 
-        return fileName
-            .split(".")
-            .pop()
-            .toUpperCase();
+        return fileName.split(".").pop().toUpperCase();
     };
 
     const formatFileSize = (size) => {
@@ -388,22 +374,14 @@ export default function SpaceDetails() {
         }
 
         if (number < 1024 * 1024) {
-            return `${(
-                number / 1024
-            ).toFixed(1)} KB`;
+            return `${(number / 1024).toFixed(1)} KB`;
         }
 
         if (number < 1024 * 1024 * 1024) {
-            return `${(
-                number /
-                (1024 * 1024)
-            ).toFixed(1)} MB`;
+            return `${(number / (1024 * 1024)).toFixed(1)} MB`;
         }
 
-        return `${(
-            number /
-            (1024 * 1024 * 1024)
-        ).toFixed(1)} GB`;
+        return `${(number / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     };
 
     const formatDate = (date) => {
@@ -417,47 +395,33 @@ export default function SpaceDetails() {
             return "";
         }
 
-        return parsed.toLocaleDateString(
-            "fr-FR",
-            {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-            }
-        );
+        return parsed.toLocaleDateString("fr-FR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
     };
 
     /* =========================================================
        FOLDER HELPERS
     ========================================================= */
 
-    const getFolderDocumentCount = (
-        folderId
-    ) => {
+    const getFolderDocumentCount = (folderId) => {
         return documents.filter(
-            (document) =>
-                Number(document.folder_id) ===
-                Number(folderId)
+            (document) => Number(document.folder_id) === Number(folderId)
         ).length;
     };
 
-    const getParentFolderName = (
-        folder
-    ) => {
+    const getParentFolderName = (folder) => {
         if (!folder?.parent_id) {
             return "Dossier principal";
         }
 
         const parent = folders.find(
-            (item) =>
-                Number(item.id) ===
-                Number(folder.parent_id)
+            (item) => Number(item.id) === Number(folder.parent_id)
         );
 
-        return (
-            parent?.name ||
-            "Sous-dossier"
-        );
+        return parent?.name || "Sous-dossier";
     };
 
     /* =========================================================
@@ -487,35 +451,22 @@ export default function SpaceDetails() {
         setUploadError("");
     };
 
-    const handleDocumentInput = (
-        event
-    ) => {
-        const {
-            name,
-            value,
-        } = event.target;
+    const handleDocumentInput = (event) => {
+        const { name, value } = event.target;
 
-        setDocumentForm(
-            (previous) => ({
-                ...previous,
-                [name]: value,
-            })
-        );
+        setDocumentForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
     };
 
-    const handleFileChange = (
-        event
-    ) => {
-        const file =
-            event.target.files?.[0] ||
-            null;
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0] || null;
 
-        setDocumentForm(
-            (previous) => ({
-                ...previous,
-                file,
-            })
-        );
+        setDocumentForm((previous) => ({
+            ...previous,
+            file,
+        }));
 
         setUploadError("");
     };
@@ -524,79 +475,46 @@ export default function SpaceDetails() {
        UPLOAD DOCUMENT
     ========================================================= */
 
-    const handleUpload = async (
-        event
-    ) => {
+    const handleUpload = async (event) => {
         event.preventDefault();
 
         setUploadError("");
         setSuccessMessage("");
 
         if (!documentForm.title.trim()) {
-            setUploadError(
-                "Veuillez saisir le titre du document."
-            );
+            setUploadError("Veuillez saisir le titre du document.");
             return;
         }
 
         if (!documentForm.file) {
-            setUploadError(
-                "Veuillez sélectionner un fichier."
-            );
+            setUploadError("Veuillez sélectionner un fichier.");
             return;
         }
 
         try {
             setUploading(true);
 
-            const formData =
-                new FormData();
+            const formData = new FormData();
 
-            formData.append(
-                "title",
-                documentForm.title.trim()
-            );
+            formData.append("title", documentForm.title.trim());
+            formData.append("description", documentForm.description.trim());
+            formData.append("space_id", String(id));
 
-            formData.append(
-                "description",
-                documentForm.description.trim()
-            );
-
-            formData.append(
-                "space_id",
-                String(id)
-            );
-
-            if (
-                documentForm.folder_id
-            ) {
-                formData.append(
-                    "folder_id",
-                    documentForm.folder_id
-                );
+            if (documentForm.folder_id) {
+                formData.append("folder_id", documentForm.folder_id);
             }
 
-            formData.append(
-                "file",
-                documentForm.file
-            );
+            formData.append("file", documentForm.file);
 
-            await api.post(
-                "/documents",
-                formData,
-                {
-                    headers: {
-                        "Content-Type":
-                            "multipart/form-data",
-                    },
-                }
-            );
+            await api.post("/documents", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
 
             await loadDocuments();
 
-            setSuccessMessage(
-                "Document ajouté avec succès."
-            );
+            setSuccessMessage("Document ajouté avec succès.");
 
             setDocumentForm({
                 title: "",
@@ -611,19 +529,12 @@ export default function SpaceDetails() {
             }, 700);
 
         } catch (err) {
-            console.error(
-                "Erreur upload:",
-                err
-            );
+            console.error("Erreur upload:", err);
 
-            const errors =
-                err.response?.data?.errors;
+            const errors = err.response?.data?.errors;
 
-            const fileError =
-                errors?.file?.[0];
-
-            const titleError =
-                errors?.title?.[0];
+            const fileError = errors?.file?.[0];
+            const titleError = errors?.title?.[0];
 
             setUploadError(
                 fileError ||
@@ -662,60 +573,38 @@ export default function SpaceDetails() {
         setFolderError("");
     };
 
-    const handleFolderInput = (
-        event
-    ) => {
-        const {
-            name,
-            value,
-        } = event.target;
+    const handleFolderInput = (event) => {
+        const { name, value } = event.target;
 
-        setFolderForm(
-            (previous) => ({
-                ...previous,
-                [name]: value,
-            })
-        );
+        setFolderForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
     };
 
     /* =========================================================
        CREATE FOLDER
     ========================================================= */
 
-    const handleCreateFolder = async (
-        event
-    ) => {
+    const handleCreateFolder = async (event) => {
         event.preventDefault();
 
         setFolderError("");
 
         if (!folderForm.name.trim()) {
-            setFolderError(
-                "Veuillez saisir le nom du dossier."
-            );
+            setFolderError("Veuillez saisir le nom du dossier.");
             return;
         }
 
         try {
             setCreatingFolder(true);
 
-            await api.post(
-                "/folders",
-                {
-                    name:
-                        folderForm.name.trim(),
-
-                    description:
-                        folderForm.description.trim() ||
-                        null,
-
-                    space_id: id,
-
-                    parent_id:
-                        folderForm.parent_id ||
-                        null,
-                }
-            );
+            await api.post("/folders", {
+                name: folderForm.name.trim(),
+                description: folderForm.description.trim() || null,
+                space_id: id,
+                parent_id: folderForm.parent_id || null,
+            });
 
             await loadFolders();
 
@@ -728,10 +617,7 @@ export default function SpaceDetails() {
             });
 
         } catch (err) {
-            console.error(
-                "Erreur création dossier:",
-                err
-            );
+            console.error("Erreur création dossier:", err);
 
             setFolderError(
                 err.response?.data?.message ||
@@ -768,51 +654,30 @@ export default function SpaceDetails() {
         setSelectedUserIds([]);
     };
 
-    const toggleUserSelection = (
-        userId
-    ) => {
-        const numericId =
-            Number(userId);
+    const toggleUserSelection = (userId) => {
+        const numericId = Number(userId);
 
-        setSelectedUserIds(
-            (previous) => {
-                if (
-                    previous.includes(
-                        numericId
-                    )
-                ) {
-                    return previous.filter(
-                        (id) =>
-                            id !== numericId
-                    );
-                }
-
-                return [
-                    ...previous,
-                    numericId,
-                ];
+        setSelectedUserIds((previous) => {
+            if (previous.includes(numericId)) {
+                return previous.filter((id) => id !== numericId);
             }
-        );
+
+            return [...previous, numericId];
+        });
     };
 
     /* =========================================================
        ADD MEMBERS
     ========================================================= */
 
-    const handleAddMembers = async (
-        event
-    ) => {
+    const handleAddMembers = async (event) => {
         event.preventDefault();
 
         setMemberError("");
         setMemberSuccess("");
 
-        if (
-            selectedUserIds.length === 0
-        ) {
-            setMemberError(
-                "Veuillez sélectionner au moins un utilisateur."
-            );
+        if (selectedUserIds.length === 0) {
+            setMemberError("Veuillez sélectionner au moins un utilisateur.");
             return;
         }
 
@@ -828,23 +693,15 @@ export default function SpaceDetails() {
              * sélectionné.
              */
 
-            for (
-                const userId
-                of selectedUserIds
-            ) {
-                await api.post(
-                    `/spaces/${id}/members`,
-                    {
-                        user_id: userId,
-                    }
-                );
+            for (const userId of selectedUserIds) {
+                await api.post(`/spaces/${id}/members`, {
+                    user_id: userId,
+                });
             }
 
             await loadMembers();
 
-            setMemberSuccess(
-                "Les membres ont été ajoutés avec succès."
-            );
+            setMemberSuccess("Les membres ont été ajoutés avec succès.");
 
             setSelectedUserIds([]);
 
@@ -860,10 +717,7 @@ export default function SpaceDetails() {
             }, 800);
 
         } catch (err) {
-            console.error(
-                "Erreur ajout membre:",
-                err
-            );
+            console.error("Erreur ajout membre:", err);
 
             setMemberError(
                 err.response?.data?.message ||
@@ -876,31 +730,62 @@ export default function SpaceDetails() {
     };
 
     /* =========================================================
+       DELETE SPACE (ADMIN)
+    ========================================================= */
+
+    const openDeleteModal = () => {
+        setDeleteError("");
+        setShowDeleteModal(true);
+    };
+
+    const closeDeleteModal = () => {
+        if (deleting) {
+            return;
+        }
+
+        setShowDeleteModal(false);
+        setDeleteError("");
+    };
+
+    const handleDeleteSpace = async () => {
+        try {
+            setDeleting(true);
+            setDeleteError("");
+
+            await api.delete(`/spaces/${id}`);
+
+            navigate("/spaces", { replace: true });
+
+        } catch (err) {
+            console.error("Erreur suppression espace:", err);
+
+            setDeleteError(
+                err.response?.data?.message ||
+                "Impossible de supprimer cet espace."
+            );
+
+            setDeleting(false);
+        }
+    };
+
+    /* =========================================================
        OPEN DOCUMENT / FOLDER
     ========================================================= */
 
-    const openDocument = (
-        document
-    ) => {
+    const openDocument = (document) => {
         if (!document?.id) {
             return;
         }
 
-        navigate(
-            `/documents/${document.id}`
-        );
+        navigate(`/documents/${document.id}`);
     };
 
-    const openFolder = (
-        folder
-    ) => {
+    const openFolder = (folder) => {
         if (!folder?.id) {
             return;
         }
 
-        navigate(
-            `/folders/${folder.id}`
-        );
+        navigate(`/folders/${folder.id}`);
     };
 
     /* =========================================================
@@ -910,17 +795,10 @@ export default function SpaceDetails() {
     if (loading) {
         return (
             <div className="space-details-page">
-
                 <div className="space-loading">
-
                     <div className="loading-spinner"></div>
-
-                    <p>
-                        Chargement de l'espace...
-                    </p>
-
+                    <p>Chargement de l'espace...</p>
                 </div>
-
             </div>
         );
     }
@@ -932,16 +810,10 @@ export default function SpaceDetails() {
     if (error || !space) {
         return (
             <div className="space-details-page">
-
                 <div className="space-error-page">
+                    <div className="error-icon">!</div>
 
-                    <div className="error-icon">
-                        !
-                    </div>
-
-                    <h2>
-                        Impossible d'ouvrir cet espace
-                    </h2>
+                    <h2>Impossible d'ouvrir cet espace</h2>
 
                     <p>
                         {error ||
@@ -950,15 +822,11 @@ export default function SpaceDetails() {
 
                     <button
                         className="space-back-button"
-                        onClick={() =>
-                            navigate("/spaces")
-                        }
+                        onClick={() => navigate("/spaces")}
                     >
                         ← Retour aux espaces
                     </button>
-
                 </div>
-
             </div>
         );
     }
@@ -976,31 +844,36 @@ export default function SpaceDetails() {
 
             <div className="space-details-header">
 
-                <button
-                    className="back-button"
-                    onClick={() =>
-                        navigate("/spaces")
-                    }
-                >
-                    ← Retour aux espaces
-                </button>
+                <div className="space-header-top-row">
+                    <button
+                        className="back-button"
+                        onClick={() => navigate("/spaces")}
+                    >
+                        ← Retour aux espaces
+                    </button>
+
+                    {isAdmin && (
+                        <button
+                            type="button"
+                            className="delete-space-button"
+                            onClick={openDeleteModal}
+                        >
+                            🗑 Supprimer l'espace
+                        </button>
+                    )}
+                </div>
 
                 <div className="space-header-main">
 
                     <div className="space-header-icon">
-                        {space.name
-                            ?.charAt(0)
-                            ?.toUpperCase() ||
-                            "E"}
+                        {space.name?.charAt(0)?.toUpperCase() || "E"}
                     </div>
 
                     <div className="space-header-info">
 
                         <div className="space-title-line">
 
-                            <h1>
-                                {space.name}
-                            </h1>
+                            <h1>{space.name}</h1>
 
                             {space.is_private && (
                                 <span className="private-badge">
@@ -1028,77 +901,35 @@ export default function SpaceDetails() {
             <div className="space-stats">
 
                 <div className="space-stat-card">
-
-                    <div className="stat-icon">
-                        📄
-                    </div>
-
+                    <div className="stat-icon">📄</div>
                     <div>
-                        <strong>
-                            {documents.length}
-                        </strong>
-
-                        <span>
-                            Documents
-                        </span>
+                        <strong>{documents.length}</strong>
+                        <span>Documents</span>
                     </div>
-
                 </div>
 
                 <div className="space-stat-card">
-
-                    <div className="stat-icon">
-                        📁
-                    </div>
-
+                    <div className="stat-icon">📁</div>
                     <div>
-                        <strong>
-                            {folders.length}
-                        </strong>
-
-                        <span>
-                            Dossiers
-                        </span>
+                        <strong>{folders.length}</strong>
+                        <span>Dossiers</span>
                     </div>
-
                 </div>
 
                 <div className="space-stat-card">
-
-                    <div className="stat-icon">
-                        👥
-                    </div>
-
+                    <div className="stat-icon">👥</div>
                     <div>
-                        <strong>
-                            {members.length}
-                        </strong>
-
-                        <span>
-                            Membres
-                        </span>
+                        <strong>{members.length}</strong>
+                        <span>Membres</span>
                     </div>
-
                 </div>
 
                 <div className="space-stat-card">
-
-                    <div className="stat-icon">
-                        📅
-                    </div>
-
+                    <div className="stat-icon">📅</div>
                     <div>
-                        <strong>
-                            {formatDate(
-                                space.created_at
-                            )}
-                        </strong>
-
-                        <span>
-                            Créé le
-                        </span>
+                        <strong>{formatDate(space.created_at)}</strong>
+                        <span>Créé le</span>
                     </div>
-
                 </div>
 
             </div>
@@ -1112,32 +943,16 @@ export default function SpaceDetails() {
                 <div className="space-section-header">
 
                     <div>
-
-                        <span className="section-label">
-                            ORGANISATION
-                        </span>
-
-                        <h2>
-                            Dossiers
-                        </h2>
-
-                        <p>
-                            Organisez les documents
-                            de cet espace.
-                        </p>
-
+                        <span className="section-label">ORGANISATION</span>
+                        <h2>Dossiers</h2>
+                        <p>Organisez les documents de cet espace.</p>
                     </div>
 
                     <button
                         className="add-folder-space-button"
-                        onClick={
-                            openFolderModal
-                        }
+                        onClick={openFolderModal}
                     >
-                        <span>
-                            +
-                        </span>
-
+                        <span>+</span>
                         Nouveau dossier
                     </button>
 
@@ -1146,117 +961,67 @@ export default function SpaceDetails() {
                 {foldersLoading ? (
 
                     <div className="documents-loading">
-
                         <div className="small-spinner"></div>
-
-                        <span>
-                            Chargement des dossiers...
-                        </span>
-
+                        <span>Chargement des dossiers...</span>
                     </div>
 
                 ) : folders.length === 0 ? (
 
                     <div className="documents-empty">
-
-                        <div className="documents-empty-icon">
-                            📁
-                        </div>
-
-                        <h3>
-                            Aucun dossier
-                        </h3>
-
-                        <p>
-                            Créez un dossier pour
-                            organiser vos documents.
-                        </p>
+                        <div className="documents-empty-icon">📁</div>
+                        <h3>Aucun dossier</h3>
+                        <p>Créez un dossier pour organiser vos documents.</p>
 
                         <button
                             className="empty-add-button"
-                            onClick={
-                                openFolderModal
-                            }
+                            onClick={openFolderModal}
                         >
                             + Créer un dossier
                         </button>
-
                     </div>
 
                 ) : (
 
                     <div className="space-folders-grid">
 
-                        {folders.map(
-                            (folder) => (
-                                <div
-                                    className="space-folder-card"
-                                    key={
-                                        folder.id
-                                    }
-                                    onClick={() =>
-                                        openFolder(
-                                            folder
-                                        )
-                                    }
-                                >
+                        {folders.map((folder) => (
+                            <div
+                                className="space-folder-card"
+                                key={folder.id}
+                                onClick={() => openFolder(folder)}
+                            >
 
-                                    <div className="space-folder-icon">
-                                        📁
-                                    </div>
+                                <div className="space-folder-icon">📁</div>
 
-                                    <div className="space-folder-content">
+                                <div className="space-folder-content">
 
-                                        <h3>
-                                            {
-                                                folder.name
-                                            }
-                                        </h3>
+                                    <h3>{folder.name}</h3>
 
-                                        <span className="folder-parent">
-                                            {
-                                                getParentFolderName(
-                                                    folder
-                                                )
-                                            }
+                                    <span className="folder-parent">
+                                        {getParentFolderName(folder)}
+                                    </span>
+
+                                    <p>
+                                        {folder.description ||
+                                            "Aucune description"}
+                                    </p>
+
+                                    <div className="folder-card-footer">
+                                        <span>
+                                            {getFolderDocumentCount(folder.id)}{" "}
+                                            document
+                                            {getFolderDocumentCount(folder.id) > 1
+                                                ? "s"
+                                                : ""}
                                         </span>
 
-                                        <p>
-                                            {
-                                                folder.description ||
-                                                "Aucune description"
-                                            }
-                                        </p>
-
-                                        <div className="folder-card-footer">
-
-                                            <span>
-                                                {
-                                                    getFolderDocumentCount(
-                                                        folder.id
-                                                    )
-                                                }{" "}
-                                                document
-                                                {
-                                                    getFolderDocumentCount(
-                                                        folder.id
-                                                    ) > 1
-                                                        ? "s"
-                                                        : ""
-                                                }
-                                            </span>
-
-                                            <strong>
-                                                Ouvrir →
-                                            </strong>
-
-                                        </div>
-
+                                        <strong>Ouvrir →</strong>
                                     </div>
 
                                 </div>
-                            )
-                        )}
+
+                            </div>
+                        ))}
 
                     </div>
                 )}
@@ -1272,32 +1037,16 @@ export default function SpaceDetails() {
                 <div className="space-section-header">
 
                     <div>
-
-                        <span className="section-label">
-                            CONTENU
-                        </span>
-
-                        <h2>
-                            Documents
-                        </h2>
-
-                        <p>
-                            Documents associés
-                            à cet espace.
-                        </p>
-
+                        <span className="section-label">CONTENU</span>
+                        <h2>Documents</h2>
+                        <p>Documents associés à cet espace.</p>
                     </div>
 
                     <button
                         className="add-document-button"
-                        onClick={
-                            openUploadModal
-                        }
+                        onClick={openUploadModal}
                     >
-                        <span className="add-icon">
-                            +
-                        </span>
-
+                        <span className="add-icon">+</span>
                         Ajouter un document
                     </button>
 
@@ -1306,140 +1055,86 @@ export default function SpaceDetails() {
                 {documentsLoading ? (
 
                     <div className="documents-loading">
-
                         <div className="small-spinner"></div>
-
-                        <span>
-                            Chargement des documents...
-                        </span>
-
+                        <span>Chargement des documents...</span>
                     </div>
 
                 ) : documents.length === 0 ? (
 
                     <div className="documents-empty">
-
-                        <div className="documents-empty-icon">
-                            📄
-                        </div>
-
-                        <h3>
-                            Aucun document
-                        </h3>
-
+                        <div className="documents-empty-icon">📄</div>
+                        <h3>Aucun document</h3>
                         <p>
-                            Ajoutez votre premier
-                            document dans cet espace.
+                            Ajoutez votre premier document dans cet espace.
                         </p>
 
                         <button
                             className="empty-add-button"
-                            onClick={
-                                openUploadModal
-                            }
+                            onClick={openUploadModal}
                         >
                             + Ajouter un document
                         </button>
-
                     </div>
 
                 ) : (
 
                     <div className="documents-grid">
 
-                        {documents.map(
-                            (document) => (
-                                <div
-                                    className="document-card"
-                                    key={
-                                        document.id
-                                    }
-                                    onClick={() =>
-                                        openDocument(
-                                            document
-                                        )
-                                    }
-                                >
+                        {documents.map((document) => (
+                            <div
+                                className="document-card"
+                                key={document.id}
+                                onClick={() => openDocument(document)}
+                            >
 
-                                    <div className="document-card-icon">
-                                        📄
+                                <div className="document-card-icon">📄</div>
+
+                                <div className="document-card-content">
+
+                                    <h3>{getDocumentName(document)}</h3>
+
+                                    <div className="document-meta">
+                                        <span>
+                                            {getFileExtension(document)}
+                                        </span>
+
+                                        {document.file_size && (
+                                            <>
+                                                <i>•</i>
+                                                <span>
+                                                    {formatFileSize(
+                                                        document.file_size
+                                                    )}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
 
-                                    <div className="document-card-content">
-
-                                        <h3>
-                                            {
-                                                getDocumentName(
-                                                    document
-                                                )
-                                            }
-                                        </h3>
-
-                                        <div className="document-meta">
-
-                                            <span>
-                                                {
-                                                    getFileExtension(
-                                                        document
-                                                    )
-                                                }
-                                            </span>
-
-                                            {document.file_size && (
-                                                <>
-                                                    <i>
-                                                        •
-                                                    </i>
-
-                                                    <span>
-                                                        {
-                                                            formatFileSize(
-                                                                document.file_size
-                                                            )
-                                                        }
-                                                    </span>
-                                                </>
-                                            )}
-
+                                    {document.folder && (
+                                        <div className="document-folder-tag">
+                                            📁 {document.folder.name}
                                         </div>
+                                    )}
 
-                                        {document.folder && (
-                                            <div className="document-folder-tag">
-                                                📁{" "}
-                                                {
-                                                    document.folder.name
-                                                }
-                                            </div>
-                                        )}
+                                    <p>
+                                        {document.description ||
+                                            "Aucune description"}
+                                    </p>
 
-                                        <p>
-                                            {
-                                                document.description ||
-                                                "Aucune description"
-                                            }
-                                        </p>
+                                    <div className="document-footer">
+                                        <span>
+                                            {formatDate(document.created_at)}
+                                        </span>
 
-                                        <div className="document-footer">
-
-                                            <span>
-                                                {
-                                                    formatDate(
-                                                        document.created_at
-                                                    )
-                                                }
-                                            </span>
-
-                                            <span className="document-open">
-                                                Ouvrir →
-                                            </span>
-
-                                        </div>
-
+                                        <span className="document-open">
+                                            Ouvrir →
+                                        </span>
                                     </div>
 
                                 </div>
-                            )
-                        )}
+
+                            </div>
+                        ))}
 
                     </div>
                 )}
@@ -1455,20 +1150,9 @@ export default function SpaceDetails() {
                 <div className="space-section-header">
 
                     <div>
-
-                        <span className="section-label">
-                            COLLABORATION
-                        </span>
-
-                        <h2>
-                            Membres de l'espace
-                        </h2>
-
-                        <p>
-                            Utilisateurs ayant accès
-                            à cet espace.
-                        </p>
-
+                        <span className="section-label">COLLABORATION</span>
+                        <h2>Membres de l'espace</h2>
+                        <p>Utilisateurs ayant accès à cet espace.</p>
                     </div>
 
                     <div className="members-header-actions">
@@ -1477,19 +1161,16 @@ export default function SpaceDetails() {
                             {members.length}
                         </div>
 
-                        <button
-                            type="button"
-                            className="add-member-space-button"
-                            onClick={
-                                openMemberModal
-                            }
-                        >
-                            <span>
-                                +
-                            </span>
-
-                            Ajouter des membres
-                        </button>
+                        {isAdmin && (
+                            <button
+                                type="button"
+                                className="add-member-space-button"
+                                onClick={openMemberModal}
+                            >
+                                <span>+</span>
+                                Ajouter des membres
+                            </button>
+                        )}
 
                     </div>
 
@@ -1498,84 +1179,47 @@ export default function SpaceDetails() {
                 {members.length === 0 ? (
 
                     <div className="members-empty">
+                        <div>👥</div>
+                        <h3>Aucun membre</h3>
+                        <p>Aucun utilisateur n'est associé à cet espace.</p>
 
-                        <div>
-                            👥
-                        </div>
-
-                        <h3>
-                            Aucun membre
-                        </h3>
-
-                        <p>
-                            Aucun utilisateur n'est
-                            associé à cet espace.
-                        </p>
-
-                        <button
-                            type="button"
-                            className="empty-add-button"
-                            onClick={
-                                openMemberModal
-                            }
-                        >
-                            + Ajouter un membre
-                        </button>
-
+                        {isAdmin && (
+                            <button
+                                type="button"
+                                className="empty-add-button"
+                                onClick={openMemberModal}
+                            >
+                                + Ajouter un membre
+                            </button>
+                        )}
                     </div>
 
                 ) : (
 
                     <div className="members-grid">
 
-                        {members.map(
-                            (member) => {
+                        {members.map((member) => {
 
-                                const user =
-                                    getUser(
-                                        member
-                                    );
+                            const user = getUser(member);
 
-                                return (
-                                    <div
-                                        className="member-card"
-                                        key={
-                                            member.id ||
-                                            user?.id
-                                        }
-                                    >
+                            return (
+                                <div
+                                    className="member-card"
+                                    key={member.id || user?.id}
+                                >
 
-                                        <div className="member-avatar">
-                                            {
-                                                getInitial(
-                                                    member
-                                                )
-                                            }
-                                        </div>
-
-                                        <div className="member-data">
-
-                                            <strong>
-                                                {
-                                                    getUserName(
-                                                        member
-                                                    )
-                                                }
-                                            </strong>
-
-                                            <span>
-                                                {
-                                                    user?.email ||
-                                                    ""
-                                                }
-                                            </span>
-
-                                        </div>
-
+                                    <div className="member-avatar">
+                                        {getInitial(member)}
                                     </div>
-                                );
-                            }
-                        )}
+
+                                    <div className="member-data">
+                                        <strong>{getUserName(member)}</strong>
+                                        <span>{user?.email || ""}</span>
+                                    </div>
+
+                                </div>
+                            );
+                        })}
 
                     </div>
                 )}
@@ -1591,10 +1235,7 @@ export default function SpaceDetails() {
                 <div
                     className="upload-modal-overlay"
                     onMouseDown={(event) => {
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
+                        if (event.target === event.currentTarget) {
                             closeFolderModal();
                         }
                     }}
@@ -1605,30 +1246,15 @@ export default function SpaceDetails() {
                         <div className="upload-modal-header">
 
                             <div>
-
-                                <span className="modal-label">
-                                    DOSSIER
-                                </span>
-
-                                <h2>
-                                    Nouveau dossier
-                                </h2>
-
-                                <p>
-                                    Créez un dossier
-                                    dans cet espace.
-                                </p>
-
+                                <span className="modal-label">DOSSIER</span>
+                                <h2>Nouveau dossier</h2>
+                                <p>Créez un dossier dans cet espace.</p>
                             </div>
 
                             <button
                                 className="modal-close"
-                                onClick={
-                                    closeFolderModal
-                                }
-                                disabled={
-                                    creatingFolder
-                                }
+                                onClick={closeFolderModal}
+                                disabled={creatingFolder}
                             >
                                 ×
                             </button>
@@ -1636,19 +1262,12 @@ export default function SpaceDetails() {
                         </div>
 
                         {folderError && (
-                            <div className="upload-error">
-                                {folderError}
-                            </div>
+                            <div className="upload-error">{folderError}</div>
                         )}
 
-                        <form
-                            onSubmit={
-                                handleCreateFolder
-                            }
-                        >
+                        <form onSubmit={handleCreateFolder}>
 
                             <div className="form-group">
-
                                 <label>
                                     Nom du dossier
                                     <span>*</span>
@@ -1657,97 +1276,53 @@ export default function SpaceDetails() {
                                 <input
                                     type="text"
                                     name="name"
-                                    value={
-                                        folderForm.name
-                                    }
-                                    onChange={
-                                        handleFolderInput
-                                    }
+                                    value={folderForm.name}
+                                    onChange={handleFolderInput}
                                     placeholder="Ex. Contrats"
-                                    disabled={
-                                        creatingFolder
-                                    }
+                                    disabled={creatingFolder}
                                 />
-
                             </div>
 
                             <div className="form-group">
-
-                                <label>
-                                    Description
-                                </label>
+                                <label>Description</label>
 
                                 <textarea
                                     name="description"
-                                    value={
-                                        folderForm.description
-                                    }
-                                    onChange={
-                                        handleFolderInput
-                                    }
+                                    value={folderForm.description}
+                                    onChange={handleFolderInput}
                                     placeholder="Description du dossier..."
                                     rows="4"
-                                    disabled={
-                                        creatingFolder
-                                    }
+                                    disabled={creatingFolder}
                                 />
-
                             </div>
 
                             <div className="form-group">
-
-                                <label>
-                                    Dossier parent
-                                </label>
+                                <label>Dossier parent</label>
 
                                 <select
                                     name="parent_id"
-                                    value={
-                                        folderForm.parent_id
-                                    }
-                                    onChange={
-                                        handleFolderInput
-                                    }
-                                    disabled={
-                                        creatingFolder
-                                    }
+                                    value={folderForm.parent_id}
+                                    onChange={handleFolderInput}
+                                    disabled={creatingFolder}
                                 >
-
                                     <option value="">
                                         Aucun — dossier principal
                                     </option>
 
-                                    {folders.map(
-                                        (folder) => (
-                                            <option
-                                                key={
-                                                    folder.id
-                                                }
-                                                value={
-                                                    folder.id
-                                                }
-                                            >
-                                                {
-                                                    folder.name
-                                                }
-                                            </option>
-                                        )
-                                    )}
-
+                                    {folders.map((folder) => (
+                                        <option
+                                            key={folder.id}
+                                            value={folder.id}
+                                        >
+                                            {folder.name}
+                                        </option>
+                                    ))}
                                 </select>
-
                             </div>
 
                             <div className="current-space">
-
-                                <span>
-                                    Espace
-                                </span>
-
-                                <strong>
-                                    📁 {space.name}
-                                </strong>
-
+                                <span>Espace</span>
+                                <strong>📁 {space.name}</strong>
                             </div>
 
                             <div className="upload-modal-actions">
@@ -1755,12 +1330,8 @@ export default function SpaceDetails() {
                                 <button
                                     type="button"
                                     className="cancel-button"
-                                    onClick={
-                                        closeFolderModal
-                                    }
-                                    disabled={
-                                        creatingFolder
-                                    }
+                                    onClick={closeFolderModal}
+                                    disabled={creatingFolder}
                                 >
                                     Annuler
                                 </button>
@@ -1768,22 +1339,16 @@ export default function SpaceDetails() {
                                 <button
                                     type="submit"
                                     className="submit-upload-button"
-                                    disabled={
-                                        creatingFolder
-                                    }
+                                    disabled={creatingFolder}
                                 >
-
                                     {creatingFolder ? (
                                         <>
                                             <span className="button-spinner"></span>
                                             Création...
                                         </>
                                     ) : (
-                                        <>
-                                            ✓ Créer le dossier
-                                        </>
+                                        <>✓ Créer le dossier</>
                                     )}
-
                                 </button>
 
                             </div>
@@ -1804,10 +1369,7 @@ export default function SpaceDetails() {
                 <div
                     className="upload-modal-overlay"
                     onMouseDown={(event) => {
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
+                        if (event.target === event.currentTarget) {
                             closeUploadModal();
                         }
                     }}
@@ -1818,30 +1380,15 @@ export default function SpaceDetails() {
                         <div className="upload-modal-header">
 
                             <div>
-
-                                <span className="modal-label">
-                                    DOCUMENT
-                                </span>
-
-                                <h2>
-                                    Ajouter un document
-                                </h2>
-
-                                <p>
-                                    Ajoutez un document
-                                    à cet espace.
-                                </p>
-
+                                <span className="modal-label">DOCUMENT</span>
+                                <h2>Ajouter un document</h2>
+                                <p>Ajoutez un document à cet espace.</p>
                             </div>
 
                             <button
                                 className="modal-close"
-                                onClick={
-                                    closeUploadModal
-                                }
-                                disabled={
-                                    uploading
-                                }
+                                onClick={closeUploadModal}
+                                disabled={uploading}
                             >
                                 ×
                             </button>
@@ -1855,19 +1402,12 @@ export default function SpaceDetails() {
                         )}
 
                         {uploadError && (
-                            <div className="upload-error">
-                                {uploadError}
-                            </div>
+                            <div className="upload-error">{uploadError}</div>
                         )}
 
-                        <form
-                            onSubmit={
-                                handleUpload
-                            }
-                        >
+                        <form onSubmit={handleUpload}>
 
                             <div className="form-group">
-
                                 <label>
                                     Titre du document
                                     <span>*</span>
@@ -1876,89 +1416,49 @@ export default function SpaceDetails() {
                                 <input
                                     type="text"
                                     name="title"
-                                    value={
-                                        documentForm.title
-                                    }
-                                    onChange={
-                                        handleDocumentInput
-                                    }
+                                    value={documentForm.title}
+                                    onChange={handleDocumentInput}
                                     placeholder="Ex. Rapport annuel 2026"
-                                    disabled={
-                                        uploading
-                                    }
+                                    disabled={uploading}
                                 />
-
                             </div>
 
                             <div className="form-group">
-
-                                <label>
-                                    Dossier
-                                </label>
+                                <label>Dossier</label>
 
                                 <select
                                     name="folder_id"
-                                    value={
-                                        documentForm.folder_id
-                                    }
-                                    onChange={
-                                        handleDocumentInput
-                                    }
-                                    disabled={
-                                        uploading
-                                    }
+                                    value={documentForm.folder_id}
+                                    onChange={handleDocumentInput}
+                                    disabled={uploading}
                                 >
+                                    <option value="">Aucun dossier</option>
 
-                                    <option value="">
-                                        Aucun dossier
-                                    </option>
-
-                                    {folders.map(
-                                        (folder) => (
-                                            <option
-                                                key={
-                                                    folder.id
-                                                }
-                                                value={
-                                                    folder.id
-                                                }
-                                            >
-                                                {
-                                                    folder.name
-                                                }
-                                            </option>
-                                        )
-                                    )}
-
+                                    {folders.map((folder) => (
+                                        <option
+                                            key={folder.id}
+                                            value={folder.id}
+                                        >
+                                            {folder.name}
+                                        </option>
+                                    ))}
                                 </select>
-
                             </div>
 
                             <div className="form-group">
-
-                                <label>
-                                    Description
-                                </label>
+                                <label>Description</label>
 
                                 <textarea
                                     name="description"
-                                    value={
-                                        documentForm.description
-                                    }
-                                    onChange={
-                                        handleDocumentInput
-                                    }
+                                    value={documentForm.description}
+                                    onChange={handleDocumentInput}
                                     placeholder="Description du document..."
                                     rows="4"
-                                    disabled={
-                                        uploading
-                                    }
+                                    disabled={uploading}
                                 />
-
                             </div>
 
                             <div className="form-group">
-
                                 <label>
                                     Fichier
                                     <span>*</span>
@@ -1966,20 +1466,13 @@ export default function SpaceDetails() {
 
                                 <label
                                     className={`file-dropzone ${
-                                        documentForm.file
-                                            ? "has-file"
-                                            : ""
+                                        documentForm.file ? "has-file" : ""
                                     }`}
                                 >
-
                                     <input
                                         type="file"
-                                        onChange={
-                                            handleFileChange
-                                        }
-                                        disabled={
-                                            uploading
-                                        }
+                                        onChange={handleFileChange}
+                                        disabled={uploading}
                                     />
 
                                     {documentForm.file ? (
@@ -1989,16 +1482,12 @@ export default function SpaceDetails() {
                                             </div>
 
                                             <strong>
-                                                {
-                                                    documentForm
-                                                        .file
-                                                        .name
-                                                }
+                                                {documentForm.file.name}
                                             </strong>
 
                                             <span>
-                                                Cliquez pour
-                                                changer le fichier
+                                                Cliquez pour changer le
+                                                fichier
                                             </span>
                                         </>
                                     ) : (
@@ -2008,31 +1497,21 @@ export default function SpaceDetails() {
                                             </div>
 
                                             <strong>
-                                                Cliquez pour sélectionner
-                                                un fichier
+                                                Cliquez pour sélectionner un
+                                                fichier
                                             </strong>
 
                                             <span>
-                                                Taille maximale :
-                                                10 MB
+                                                Taille maximale : 10 MB
                                             </span>
                                         </>
                                     )}
-
                                 </label>
-
                             </div>
 
                             <div className="current-space">
-
-                                <span>
-                                    Espace de destination
-                                </span>
-
-                                <strong>
-                                    📁 {space.name}
-                                </strong>
-
+                                <span>Espace de destination</span>
+                                <strong>📁 {space.name}</strong>
                             </div>
 
                             <div className="upload-modal-actions">
@@ -2040,12 +1519,8 @@ export default function SpaceDetails() {
                                 <button
                                     type="button"
                                     className="cancel-button"
-                                    onClick={
-                                        closeUploadModal
-                                    }
-                                    disabled={
-                                        uploading
-                                    }
+                                    onClick={closeUploadModal}
+                                    disabled={uploading}
                                 >
                                     Annuler
                                 </button>
@@ -2053,22 +1528,16 @@ export default function SpaceDetails() {
                                 <button
                                     type="submit"
                                     className="submit-upload-button"
-                                    disabled={
-                                        uploading
-                                    }
+                                    disabled={uploading}
                                 >
-
                                     {uploading ? (
                                         <>
                                             <span className="button-spinner"></span>
                                             Ajout en cours...
                                         </>
                                     ) : (
-                                        <>
-                                            ✓ Ajouter le document
-                                        </>
+                                        <>✓ Ajouter le document</>
                                     )}
-
                                 </button>
 
                             </div>
@@ -2089,10 +1558,7 @@ export default function SpaceDetails() {
                 <div
                     className="upload-modal-overlay"
                     onMouseDown={(event) => {
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
+                        if (event.target === event.currentTarget) {
                             closeMemberModal();
                         }
                     }}
@@ -2103,30 +1569,20 @@ export default function SpaceDetails() {
                         <div className="upload-modal-header">
 
                             <div>
-
                                 <span className="modal-label">
                                     COLLABORATION
                                 </span>
-
-                                <h2>
-                                    Ajouter des membres
-                                </h2>
-
+                                <h2>Ajouter des membres</h2>
                                 <p>
-                                    Sélectionnez les utilisateurs
-                                    qui auront accès à cet espace.
+                                    Sélectionnez les utilisateurs qui auront
+                                    accès à cet espace.
                                 </p>
-
                             </div>
 
                             <button
                                 className="modal-close"
-                                onClick={
-                                    closeMemberModal
-                                }
-                                disabled={
-                                    addingMembers
-                                }
+                                onClick={closeMemberModal}
+                                disabled={addingMembers}
                             >
                                 ×
                             </button>
@@ -2140,163 +1596,112 @@ export default function SpaceDetails() {
                         )}
 
                         {memberError && (
-                            <div className="upload-error">
-                                {memberError}
-                            </div>
+                            <div className="upload-error">{memberError}</div>
                         )}
 
                         {membersLoading ? (
 
                             <div className="members-modal-loading">
-
                                 <div className="small-spinner"></div>
-
-                                <span>
-                                    Chargement des utilisateurs...
-                                </span>
-
+                                <span>Chargement des utilisateurs...</span>
                             </div>
 
                         ) : users.length === 0 ? (
 
                             <div className="members-modal-empty">
-
                                 <div className="members-modal-empty-icon">
                                     👥
                                 </div>
 
-                                <h3>
-                                    Aucun utilisateur disponible
-                                </h3>
+                                <h3>Aucun utilisateur disponible</h3>
 
                                 <p>
-                                    Tous les utilisateurs ont
-                                    déjà accès à cet espace.
+                                    Tous les utilisateurs ont déjà accès à
+                                    cet espace.
                                 </p>
-
                             </div>
 
                         ) : (
 
-                            <form
-                                onSubmit={
-                                    handleAddMembers
-                                }
-                            >
+                            <form onSubmit={handleAddMembers}>
 
                                 <div className="users-selection-list">
 
-                                    {users.map(
-                                        (user) => {
+                                    {users.map((user) => {
 
-                                            const fullName =
-                                                `${user.first_name || ""} ${
-                                                    user.last_name || ""
-                                                }`.trim();
+                                        const fullName = `${
+                                            user.first_name || ""
+                                        } ${user.last_name || ""}`.trim();
 
-                                            const displayName =
-                                                fullName ||
-                                                user.name ||
-                                                user.email ||
-                                                "Utilisateur";
+                                        const displayName =
+                                            fullName ||
+                                            user.name ||
+                                            user.email ||
+                                            "Utilisateur";
 
-                                            const selected =
-                                                selectedUserIds.includes(
-                                                    Number(user.id)
-                                                );
+                                        const selected =
+                                            selectedUserIds.includes(
+                                                Number(user.id)
+                                            );
 
-                                            return (
+                                        return (
 
-                                                <div
-                                                    key={
+                                            <div
+                                                key={user.id}
+                                                className={`user-selection-card ${
+                                                    selected
+                                                        ? "selected"
+                                                        : ""
+                                                }`}
+                                                onClick={() =>
+                                                    toggleUserSelection(
                                                         user.id
-                                                    }
-                                                    className={`user-selection-card ${
-                                                        selected
-                                                            ? "selected"
-                                                            : ""
-                                                    }`}
-                                                    onClick={() =>
-                                                        toggleUserSelection(
-                                                            user.id
-                                                        )
-                                                    }
-                                                >
+                                                    )
+                                                }
+                                            >
 
-                                                    <div className="user-selection-checkbox">
-
-                                                        {selected && (
-                                                            <span>
-                                                                ✓
-                                                            </span>
-                                                        )}
-
-                                                    </div>
-
-                                                    <div className="user-selection-avatar">
-                                                        {displayName
-                                                            .charAt(0)
-                                                            .toUpperCase()}
-                                                    </div>
-
-                                                    <div className="user-selection-info">
-
-                                                        <strong>
-                                                            {
-                                                                displayName
-                                                            }
-                                                        </strong>
-
-                                                        <span>
-                                                            {
-                                                                user.email
-                                                            }
-                                                        </span>
-
-                                                    </div>
-
+                                                <div className="user-selection-checkbox">
+                                                    {selected && (
+                                                        <span>✓</span>
+                                                    )}
                                                 </div>
 
-                                            );
-                                        }
-                                    )}
+                                                <div className="user-selection-avatar">
+                                                    {displayName
+                                                        .charAt(0)
+                                                        .toUpperCase()}
+                                                </div>
+
+                                                <div className="user-selection-info">
+                                                    <strong>
+                                                        {displayName}
+                                                    </strong>
+                                                    <span>{user.email}</span>
+                                                </div>
+
+                                            </div>
+
+                                        );
+                                    })}
 
                                 </div>
 
                                 <div className="selected-members-info">
-
                                     <span>
-                                        {
-                                            selectedUserIds.length
-                                        }{" "}
-                                        utilisateur
-                                        {
-                                            selectedUserIds.length >
-                                            1
-                                                ? "s"
-                                                : ""
-                                        }{" "}
+                                        {selectedUserIds.length} utilisateur
+                                        {selectedUserIds.length > 1
+                                            ? "s"
+                                            : ""}{" "}
                                         sélectionné
-                                        {
-                                            selectedUserIds.length >
-                                            1
-                                                ? "s"
-                                                : ""
-                                        }
+                                        {selectedUserIds.length > 1
+                                            ? "s"
+                                            : ""}
                                     </span>
-
                                 </div>
 
                                 <div className="current-space">
-
-                                    <span>
-                                        Espace de destination
-                                    </span>
-
-                                    <strong>
-                                        📁 {space.name}
-                                    </strong>
-
+                                    <span>Espace de destination</span>
+                                    <strong>📁 {space.name}</strong>
                                 </div>
 
                                 <div className="upload-modal-actions">
@@ -2304,12 +1709,8 @@ export default function SpaceDetails() {
                                     <button
                                         type="button"
                                         className="cancel-button"
-                                        onClick={
-                                            closeMemberModal
-                                        }
-                                        disabled={
-                                            addingMembers
-                                        }
+                                        onClick={closeMemberModal}
+                                        disabled={addingMembers}
                                     >
                                         Annuler
                                     </button>
@@ -2319,22 +1720,17 @@ export default function SpaceDetails() {
                                         className="submit-upload-button"
                                         disabled={
                                             addingMembers ||
-                                            selectedUserIds.length ===
-                                                0
+                                            selectedUserIds.length === 0
                                         }
                                     >
-
                                         {addingMembers ? (
                                             <>
                                                 <span className="button-spinner"></span>
                                                 Ajout en cours...
                                             </>
                                         ) : (
-                                            <>
-                                                ✓ Ajouter les membres
-                                            </>
+                                            <>✓ Ajouter les membres</>
                                         )}
-
                                     </button>
 
                                 </div>
@@ -2342,6 +1738,71 @@ export default function SpaceDetails() {
                             </form>
 
                         )}
+
+                    </div>
+
+                </div>
+            )}
+
+            {/* =================================================
+                DELETE SPACE MODAL (ADMIN)
+            ================================================= */}
+
+            {showDeleteModal && (
+
+                <div
+                    className="upload-modal-overlay"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            closeDeleteModal();
+                        }
+                    }}
+                >
+
+                    <div className="upload-modal delete-modal">
+
+                        <div className="delete-modal-icon">⚠</div>
+
+                        <h2>Supprimer « {space.name} » ?</h2>
+
+                        <p>
+                            Cette action est irréversible. Tous les
+                            documents et dossiers de cet espace seront
+                            définitivement supprimés.
+                        </p>
+
+                        {deleteError && (
+                            <div className="upload-error">{deleteError}</div>
+                        )}
+
+                        <div className="upload-modal-actions">
+
+                            <button
+                                type="button"
+                                className="cancel-button"
+                                onClick={closeDeleteModal}
+                                disabled={deleting}
+                            >
+                                Annuler
+                            </button>
+
+                            <button
+                                type="button"
+                                className="confirm-delete-button"
+                                onClick={handleDeleteSpace}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <>
+                                        <span className="button-spinner"></span>
+                                        Suppression...
+                                    </>
+                                ) : (
+                                    <>🗑 Supprimer définitivement</>
+                                )}
+                            </button>
+
+                        </div>
 
                     </div>
 
